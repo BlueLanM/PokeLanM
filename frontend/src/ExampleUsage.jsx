@@ -16,7 +16,7 @@ function ExampleUsage() {
 			setLoading(true);
 			setError(null);
 			const data = await pokemonApi.getPokemons({ page: 1, limit: 10 });
-			setPokemons(data);
+			setPokemons(data?.data);
 		} catch (err) {
 			setError(err.message);
 			console.error('获取宝可梦列表失败:', err);
