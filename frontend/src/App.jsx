@@ -1,8 +1,9 @@
 
 import "./App.css";
+import ExampleUsage from "./ExampleUsage"
 
 function App() {
-	return <>1</>
+	return <div><ExampleUsage /></div>
 }
 
 export default App;
