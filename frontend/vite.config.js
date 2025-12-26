@@ -4,7 +4,6 @@ import react from "@vitejs/plugin-react";
 // https://vite.dev/config/
 export default defineConfig({
 	// GitHub Pages 部署配置
-	// 将 'pokemon-nodejs' 替换为你的仓库名
 	base: process.env.NODE_ENV === 'production' ? '/pokemon-nodejs/' : '/',
 	
 	esbuild: {
@@ -18,7 +17,7 @@ export default defineConfig({
 	
 	// 构建配置
 	build: {
-		outDir: 'dist',
+		outDir: 'docs',
 		assetsDir: 'assets',
 		sourcemap: false,
 	}
