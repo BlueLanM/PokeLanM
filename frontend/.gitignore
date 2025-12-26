@@ -8,9 +8,10 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
 dist-ssr
 *.local
+# 注意：docs 目录不忽略，用于 GitHub Pages 部署
+# dist
 
 # Editor directories and files
 .vscode/*
