@@ -8,7 +8,7 @@
 
 ### 🚀 一键启动（推荐）
 
-#### 方法一：使用 npm 脚本
+#### 使用 npm 脚本
 ```bash
 # 首次运行，安装所有依赖
 npm run install:all
@@ -16,9 +16,6 @@ npm run install:all
 # 同时启动前端和后端
 npm run dev
 ```
-
-#### 方法二：使用批处理文件（Windows）
-双击根目录的 `start.bat` 文件，会自动在两个窗口中启动前后端。
 
 ### 手动分别启动
 
