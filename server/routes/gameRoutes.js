@@ -42,4 +42,7 @@ router.get("/game/pokedex/:playerId", gameController.getPokedex);
 router.get("/game/pokedex-stats/:playerId", gameController.getPokedexStats);
 router.get("/game/special-badges/:playerId", gameController.getSpecialBadges);
 
+// 管理员功能
+router.post("/game/admin/set-money", gameController.adminSetPlayerMoney);
+
 export default router;
