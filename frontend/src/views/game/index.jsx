@@ -331,7 +331,8 @@ const PokemonGame = () => {
 
 			await gameAPI.catchPokemon(player.id, starterPokemon, 1);
 			Message.success(`恭喜！你选择了 ${starter.name}！`);
-			loadPlayer(player.id);
+			// 等待加载玩家数据完成，这样会自动跳转到游戏主界面
+			await loadPlayer(player.id);
 		} catch (error) {
 			Message.error("选择失败，请重试");
 		}
