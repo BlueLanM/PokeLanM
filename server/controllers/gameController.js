@@ -16,7 +16,65 @@ try {
 	console.error("加载 pokemon.json 失败:", error);
 }
 
-// 创建玩家
+// 注册玩家
+export const registerPlayer = async(req, res) => {
+	try {
+		const { name, password } = req.body;
+		if (!name || !password) {
+			return res.status(400).json({ error: "用户名和密码不能为空" });
+		}
+
+		if (password.length < 4) {
+			return res.status(400).json({ error: "密码长度至少4位" });
+		}
+
+		const playerId = await GameModel.registerPlayer(name, password);
+		const player = await GameModel.getPlayer(playerId);
+
+		// 不返回密码
+		delete player.password;
+
+		res.json({
+			message: "注册成功",
+			player,
+			success: true
+		});
+	} catch (error) {
+		if (error.code === "ER_DUP_ENTRY") {
+			return res.status(400).json({ error: "用户名已存在" });
+		}
+		res.status(500).json({ error: error.message });
+	}
+};
+
+// 登录
+export const loginPlayer = async(req, res) => {
+	try {
+		const { name, password } = req.body;
+		if (!name || !password) {
+			return res.status(400).json({ error: "用户名和密码不能为空" });
+		}
+
+		const player = await GameModel.loginPlayer(name, password);
+
+		if (!player) {
+			return res.status(401).json({ error: "用户名或密码错误" });
+		}
+
+		// 不返回密码
+		delete player.password;
+
+		res.json({
+			message: "登录成功",
+			player,
+			success: true
+		});
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+// 创建玩家（旧版本兼容）
 export const createPlayer = async(req, res) => {
 	try {
 		const { name } = req.body;
@@ -422,6 +480,69 @@ export const migratePartyData = async(req, res) => {
 		} else {
 			res.status(400).json({ error: result.message });
 		}
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+// 获取排行榜
+export const getLeaderboard = async(req, res) => {
+	try {
+		const leaderboard = await GameModel.getLeaderboard();
+		res.json({ leaderboard, success: true });
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+// ========== 图鉴相关 ==========
+
+// 获取玩家图鉴
+export const getPokedex = async(req, res) => {
+	try {
+		const { playerId } = req.params;
+
+		// 获取图鉴数据
+		const pokedex = await GameModel.getPlayerPokedex(playerId);
+
+		// 获取统计信息
+		const stats = await GameModel.getPokedexStats(playerId);
+
+		res.json({
+			pokedex,
+			stats,
+			success: true
+		});
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+// 获取图鉴统计
+export const getPokedexStats = async(req, res) => {
+	try {
+		const { playerId } = req.params;
+		const stats = await GameModel.getPokedexStats(playerId);
+
+		res.json({
+			stats,
+			success: true
+		});
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+// 获取特殊徽章
+export const getSpecialBadges = async(req, res) => {
+	try {
+		const { playerId } = req.params;
+		const badges = await GameModel.getSpecialBadges(playerId);
+
+		res.json({
+			badges,
+			success: true
+		});
 	} catch (error) {
 		res.status(500).json({ error: error.message });
 	}

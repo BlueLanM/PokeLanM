@@ -3,7 +3,9 @@ import * as gameController from "../controllers/gameController.js";
 
 const router = express.Router();
 
-// 玩家相关
+// 玩家相关 - 注册登录
+router.post("/game/register", gameController.registerPlayer);
+router.post("/game/login", gameController.loginPlayer);
 router.post("/game/player", gameController.createPlayer);
 router.get("/game/player/:playerId", gameController.getPlayerInfo);
 
@@ -30,5 +32,13 @@ router.post("/game/switch-main", gameController.switchMainPokemon);
 
 // 数据迁移
 router.post("/game/migrate", gameController.migratePartyData);
+
+// 排行榜
+router.get("/game/leaderboard", gameController.getLeaderboard);
+
+// 图鉴系统
+router.get("/game/pokedex/:playerId", gameController.getPokedex);
+router.get("/game/pokedex-stats/:playerId", gameController.getPokedexStats);
+router.get("/game/special-badges/:playerId", gameController.getSpecialBadges);
 
 export default router;

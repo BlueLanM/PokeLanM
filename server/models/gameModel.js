@@ -9,11 +9,35 @@ export const initGameTables = async() => {
       CREATE TABLE IF NOT EXISTS players (
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(50) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
         money INT DEFAULT 1000,
+        pokemon_caught INT DEFAULT 0,
+        gyms_defeated INT DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
     `);
+
+		// 添加密码字段（如果表已存在但没有该字段）
+		try {
+			await connection.query(`
+        ALTER TABLE players 
+        ADD COLUMN password VARCHAR(255) NOT NULL DEFAULT ''
+      `);
+		} catch (err) {
+			// 字段已存在，忽略错误
+		}
+
+		// 添加统计字段
+		try {
+			await connection.query(`
+        ALTER TABLE players 
+        ADD COLUMN pokemon_caught INT DEFAULT 0,
+        ADD COLUMN gyms_defeated INT DEFAULT 0
+      `);
+		} catch (err) {
+			// 字段已存在，忽略错误
+		}
 
 		// 精灵球类型表
 		await connection.query(`
@@ -131,6 +155,35 @@ export const initGameTables = async() => {
         UNIQUE KEY unique_badge (player_id, gym_id)
       )
     `);
+
+		// 玩家图鉴表 - 记录捕获过的宝可梦种类
+		await connection.query(`
+      CREATE TABLE IF NOT EXISTS player_pokedex (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        player_id INT NOT NULL,
+        pokemon_id INT NOT NULL,
+        pokemon_name VARCHAR(100) NOT NULL,
+        pokemon_name_en VARCHAR(100),
+        pokemon_sprite VARCHAR(255),
+        first_caught_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        total_caught INT DEFAULT 1,
+        FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_pokedex_entry (player_id, pokemon_id)
+      )
+    `);
+
+		// 特殊徽章表 - 用于全图鉴等特殊成就
+		await connection.query(`
+      CREATE TABLE IF NOT EXISTS special_badges (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        player_id INT NOT NULL,
+        badge_type VARCHAR(50) NOT NULL,
+        badge_name VARCHAR(100) NOT NULL,
+        earned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_special_badge (player_id, badge_type)
+      )
+    `);
 	} catch (error) {
 		console.error("❌ Error initializing game tables:", error);
 		throw error;
@@ -139,10 +192,33 @@ export const initGameTables = async() => {
 	}
 };
 
-// 玩家相关操作
+// 玩家相关操作 - 注册（带密码）
+export const registerPlayer = async(name, password) => {
+	const [result] = await pool.query(
+		"INSERT INTO players (name, password, money, pokemon_caught, gyms_defeated) VALUES (?, ?, 1000, 0, 0)",
+		[name, password]
+	);
+	// 给新玩家初始物品
+	await pool.query(
+		"INSERT INTO player_items (player_id, pokeball_type_id, quantity) VALUES (?, 1, 5)",
+		[result.insertId]
+	);
+	return result.insertId;
+};
+
+// 玩家登录验证
+export const loginPlayer = async(name, password) => {
+	const [rows] = await pool.query(
+		"SELECT * FROM players WHERE name = ? AND password = ?",
+		[name, password]
+	);
+	return rows[0];
+};
+
+// 旧版本创建玩家（兼容性，无密码）
 export const createPlayer = async(name) => {
 	const [result] = await pool.query(
-		"INSERT INTO players (name, money) VALUES (?, 1000)",
+		"INSERT INTO players (name, password, money) VALUES (?, '', 1000)",
 		[name]
 	);
 	// 给新玩家初始物品
@@ -193,6 +269,16 @@ export const addToParty = async(playerId, pokemon) => {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		[playerId, pokemon.id, pokemon.name, pokemon.sprite, pokemon.level, pokemon.hp, pokemon.max_hp, pokemon.attack, position]
 	);
+
+	// 更新捕获精灵数量
+	await pool.query(
+		"UPDATE players SET pokemon_caught = pokemon_caught + 1 WHERE id = ?",
+		[playerId]
+	);
+
+	// 添加到图鉴
+	await addToPokedex(playerId, pokemon);
+
 	return result.insertId;
 };
 
@@ -211,6 +297,16 @@ export const addToStorage = async(playerId, pokemon) => {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		[playerId, pokemon.id, pokemon.name, pokemon.sprite, pokemon.level, pokemon.hp, pokemon.max_hp, pokemon.attack]
 	);
+
+	// 更新捕获精灵数量
+	await pool.query(
+		"UPDATE players SET pokemon_caught = pokemon_caught + 1 WHERE id = ?",
+		[playerId]
+	);
+
+	// 添加到图鉴
+	await addToPokedex(playerId, pokemon);
+
 	return result.insertId;
 };
 
@@ -280,6 +376,11 @@ export const addBadge = async(playerId, gymId) => {
 			"INSERT INTO player_badges (player_id, gym_id) VALUES (?, ?)",
 			[playerId, gymId]
 		);
+		// 更新道馆击败数量
+		await pool.query(
+			"UPDATE players SET gyms_defeated = gyms_defeated + 1 WHERE id = ?",
+			[playerId]
+		);
 		return true;
 	} catch (error) {
 		return false; // 已经有这个徽章
@@ -348,6 +449,24 @@ export const migrateExtraPartyToStorage = async(playerId) => {
 		await pool.query("ROLLBACK");
 		return { message: error.message, success: false };
 	}
+};
+
+// 获取排行榜
+export const getLeaderboard = async() => {
+	const [rows] = await pool.query(
+		`SELECT 
+			id,
+			name,
+			pokemon_caught,
+			gyms_defeated,
+			money,
+			created_at
+		FROM players
+		ORDER BY pokemon_caught DESC, gyms_defeated DESC, money DESC
+		LIMIT 50`,
+		[]
+	);
+	return rows;
 };
 
 // 经验值和升级系统
@@ -454,6 +573,111 @@ export const addExpToPokemon = async(partyId, expGained) => {
 	} catch (error) {
 		return { message: error.message, success: false };
 	}
+};
+// ========== 图鉴系统 ==========
+
+// 添加到图鉴（捕获新宝可梦时调用）
+export const addToPokedex = async(playerId, pokemon) => {
+	try {
+		// 检查是否已有该宝可梦
+		const [existing] = await pool.query(
+			"SELECT * FROM player_pokedex WHERE player_id = ? AND pokemon_id = ?",
+			[playerId, pokemon.id]
+		);
+
+		if (existing.length > 0) {
+			// 已有，更新捕获次数
+			await pool.query(
+				"UPDATE player_pokedex SET total_caught = total_caught + 1 WHERE player_id = ? AND pokemon_id = ?",
+				[playerId, pokemon.id]
+			);
+			return { isNew: false };
+		} else {
+			// 新发现，插入记录
+			await pool.query(
+				`INSERT INTO player_pokedex (player_id, pokemon_id, pokemon_name, pokemon_name_en, pokemon_sprite, total_caught)
+				 VALUES (?, ?, ?, ?, ?, 1)`,
+				[playerId, pokemon.id, pokemon.name, pokemon.name_en || pokemon.name, pokemon.sprite]
+			);
+
+			// 检查是否完成全图鉴
+			await checkAndAwardFullPokedex(playerId);
+
+			return { isNew: true };
+		}
+	} catch (error) {
+		console.error("Error adding to pokedex:", error);
+		return { isNew: false };
+	}
+};
+
+// 获取玩家图鉴
+export const getPlayerPokedex = async(playerId) => {
+	const [rows] = await pool.query(
+		"SELECT * FROM player_pokedex WHERE player_id = ? ORDER BY pokemon_id ASC",
+		[playerId]
+	);
+	return rows;
+};
+
+// 获取图鉴统计信息
+export const getPokedexStats = async(playerId) => {
+	const [stats] = await pool.query(
+		`SELECT 
+			COUNT(*) as discovered,
+			SUM(total_caught) as total_caught
+		FROM player_pokedex
+		WHERE player_id = ?`,
+		[playerId]
+	);
+
+	return {
+		discovered: stats[0]?.discovered || 0,
+		total: 1025, // 截至第9世代共1025只宝可梦
+		totalCaught: stats[0]?.total_caught || 0
+	};
+};
+
+// 检查并授予全图鉴徽章（假设全图鉴为所有1025只）
+const checkAndAwardFullPokedex = async(playerId) => {
+	const stats = await getPokedexStats(playerId);
+
+	// 如果收集齐全所有宝可梦
+	if (stats.discovered >= stats.total) {
+		// 检查是否已有全图鉴徽章
+		const [existing] = await pool.query(
+			"SELECT * FROM special_badges WHERE player_id = ? AND badge_type = 'full_pokedex'",
+			[playerId]
+		);
+
+		if (existing.length === 0) {
+			// 授予全图鉴徽章
+			await pool.query(
+				"INSERT INTO special_badges (player_id, badge_type, badge_name) VALUES (?, 'full_pokedex', '全国图鉴大师')",
+				[playerId]
+			);
+
+			// 奖励金币
+			await updatePlayerMoney(playerId, 10000);
+
+			return {
+				awarded: true,
+				badgeName: "全国图鉴大师",
+				reward: 10000
+			};
+		}
+	}
+
+	return { awarded: false };
+};
+
+// 获取玩家的特殊徽章
+export const getSpecialBadges = async(playerId) => {
+	const [rows] = await pool.query(
+		"SELECT * FROM special_badges WHERE player_id = ? ORDER BY earned_at DESC",
+		[playerId]
+	);
+	return rows;
 };
 
 // 恢复宝可梦HP

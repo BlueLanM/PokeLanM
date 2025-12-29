@@ -3,6 +3,7 @@ import * as gameAPI from "../../api/game";
 import Message from "../../components/Message";
 import Button from "../../components/Button";
 import Modal from "../../components/Modal";
+import Pokedex from "../pokedex";
 import "./index.css";
 
 // 计算升级所需经验值（与后端保持一致）
@@ -283,7 +284,7 @@ const PokemonGame = () => {
 	const handleBuy = async (item, quantity) => {
 		try {
 			const data = await gameAPI.buyItem(player.id, item.id, quantity);
-			Message.success(data.message);
+			Message.success(data.message,1000);
 			setPlayer({ ...player, money: data.money });
 			loadPlayer(player.id);
 		} catch (error) {
@@ -517,6 +518,7 @@ const PokemonGame = () => {
 							🎒 背包 ({playerParty.length}/1)
 						</Button>
 						<Button onClick={loadStorage}>📦 仓库</Button>
+						<Button onClick={() => setCurrentView("pokedex")}>📖 图鉴</Button>
 					</div>
 
 					<div className="info-section">
@@ -644,6 +646,15 @@ const PokemonGame = () => {
 							</div>
 						))}
 					</div>
+				</div>
+			)}
+
+			{currentView === "pokedex" && (
+				<div className="pokedex-view">
+					<Button onClick={() => setCurrentView("home")} style={{ marginBottom: "20px" }}>
+						返回
+					</Button>
+					<Pokedex playerId={player.id} />
 				</div>
 			)}
 		</div>
