@@ -115,14 +115,16 @@ const PokemonGame = () => {
 					}
 					
 					// 显示经验奖励
-					if (data.expResult) {
+					if (data.expResult && selectedPokemon) {
 						catchMessage += `\n⭐ ${selectedPokemon.pokemon_name} 获得 ${data.expResult.expGained} 经验值`;
 						if (data.expResult.leveledUp) {
 							catchMessage += `\n🎊 升到了 Lv.${data.expResult.newLevel}！`;
 							catchMessage += `\n📈 HP +${data.expResult.hpGained}, 攻击 +${data.expResult.attackGained}`;
 						}
 					}
-					setBattleLog([...battleLog, data.message]);
+					
+					// 更新战斗日志,显示完整信息
+					setBattleLog([...battleLog, catchMessage]);
 					Message.success(catchMessage);
 					setInBattle(false);
 					setWildPokemon(null);
