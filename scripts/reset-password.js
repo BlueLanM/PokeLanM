@@ -12,14 +12,14 @@ dotenv.config({ path: "./server/.env" });
 async function resetPassword() {
 	// 直接创建数据库连接
 	const pool = mysql.createPool({
-		host: process.env.MYSQLHOST || process.env.DB_HOST,
-		port: process.env.MYSQLPORT || process.env.DB_PORT || 3306,
-		user: process.env.MYSQLUSER || process.env.DB_USER,
-		password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD,
-		database: process.env.MYSQL_DATABASE || process.env.DB_NAME,
-		waitForConnections: true,
 		connectionLimit: 10,
-		queueLimit: 0
+		database: process.env.MYSQL_DATABASE || process.env.DB_NAME,
+		host: process.env.MYSQLHOST || process.env.DB_HOST,
+		password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD,
+		port: process.env.MYSQLPORT || process.env.DB_PORT || 3306,
+		queueLimit: 0,
+		user: process.env.MYSQLUSER || process.env.DB_USER,
+		waitForConnections: true
 	});
 
 	const rl = readline.createInterface({
