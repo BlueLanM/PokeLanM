@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import mysql from "mysql2/promise";
 
 // 加载环境变量
-dotenv.config({ path: "./server/.env" });
+dotenv.config({ path: "./.env" });
 
 /**
  * 数据库修复脚本

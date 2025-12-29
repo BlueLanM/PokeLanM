@@ -4,8 +4,10 @@
 	"type": "module",
 	"main": "index.js",
 	"scripts": {
+		"postinstall": "node scripts/fix-database.js || true",
 		"start": "node index.js",
-		"dev": "nodemon index.js"
+		"dev": "nodemon index.js",
+		"fix-db": "node scripts/fix-database.js"
 	},
 	"dependencies": {
 		"axios": "^1.6.2",
