@@ -17,7 +17,6 @@
 	outline: 0;
 }
 .modal {
-	overflow: hidden;
 	position: relative;
 	border-radius: 6px;
 	max-height: 80vh;
@@ -29,6 +28,7 @@
 	display: flex;
 	position: relative;
 	flex-direction: column;
+	max-height: 80vh;
 }
 .modal-header {
 	display: flex;
@@ -74,12 +74,28 @@
 	outline: none;
 }
 .modal-body {
+	overflow-x: hidden;
 	overflow-y: auto;
-	flex: 1;
 	padding: 24px;
+	max-height: calc(80vh - 140px);
 	line-height: 1.5715;
 	font-size: 14px;
 	color: rgba(0, 0, 0, 0.65);
+}
+/* 自定义滚动条样式 */
+.modal-body::-webkit-scrollbar {
+	width: 8px;
+}
+.modal-body::-webkit-scrollbar-track {
+	border-radius: 4px;
+	background: #f0f0f0;
+}
+.modal-body::-webkit-scrollbar-thumb {
+	border-radius: 4px;
+	background: #c1c1c1;
+}
+.modal-body::-webkit-scrollbar-thumb:hover {
+	background: #a8a8a8;
 }
 .modal-footer {
 	display: flex;

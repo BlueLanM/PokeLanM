@@ -44,6 +44,18 @@ export const initGameTables = async() => {
 			// 字段已存在，忽略错误
 		}
 
+		// 添加管理员字段
+		try {
+			await connection.query(`
+        ALTER TABLE players 
+        ADD COLUMN is_admin BOOLEAN DEFAULT FALSE
+      `);
+			console.log("✓ 管理员字段已添加");
+		} catch (err) {
+			// 字段已存在，忽略错误
+			console.log("✓ 管理员字段已存在");
+		}
+
 		// 精灵球类型表
 		await connection.query(`
       CREATE TABLE IF NOT EXISTS pokeball_types (

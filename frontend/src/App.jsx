@@ -47,6 +47,25 @@ function App() {
 
 	// 已登录,根据当前视图显示不同页面
 	if (currentView === "pokemon") {
+		// 检查是否是管理员
+		if (player?.is_admin !== 1) {
+			return (
+				<div className="app">
+					<div className="app-header">
+						<Button onClick={() => setCurrentView("game")}>← 返回游戏</Button>
+						<Button onClick={handleLogout} className="logout-btn">退出登录</Button>
+					</div>
+					<div style={{ padding: '50px', textAlign: 'center' }}>
+						<h2>⚠️ 权限不足</h2>
+						<p>抱歉，只有管理员才能访问管理系统。</p>
+						<Button onClick={() => setCurrentView("game")} style={{ marginTop: '20px' }}>
+							返回游戏
+						</Button>
+					</div>
+				</div>
+			);
+		}
+		
 		return (
 			<div className="app">
 				<div className="app-header">
@@ -64,7 +83,9 @@ function App() {
 			<div className="app">
 				<div className="app-header">
 					<Button onClick={() => setCurrentView("game")}>← 返回游戏</Button>
-					<Button onClick={() => setCurrentView("pokemon")}>⚙️ 管理系统</Button>
+					{player?.is_admin === 1 ? (
+						<Button onClick={() => setCurrentView("pokemon")}>⚙️ 管理系统</Button>
+					) : null}
 					<Button onClick={handleLogout} className="logout-btn">退出登录</Button>
 				</div>
 				<Leaderboard currentPlayer={player} />
@@ -76,7 +97,9 @@ function App() {
 	return (
 		<div className="app">
 			<div className="app-header">
-				<Button onClick={() => setCurrentView("pokemon")}>⚙️ 管理系统</Button>
+				{player?.is_admin === 1 ? (
+					<Button onClick={() => setCurrentView("pokemon")}>⚙️ 管理系统</Button>
+				) : null}
 				<Button onClick={() => setCurrentView("leaderboard")}>🏆 排行榜</Button>
 				<Button onClick={handleLogout} className="logout-btn">退出登录</Button>
 			</div>

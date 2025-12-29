@@ -189,3 +189,30 @@ export const getSpecialBadges = (playerId) => {
 	});
 };
 
+// 选择初始宝可梦
+export const selectStarter = (playerId, pokemon) => {
+	return request({
+		url: '/game/select-starter',
+		method: 'POST',
+		data: { playerId, pokemon }
+	});
+};
+
+// ========== 管理员功能 ==========
+
+// 设置玩家金币（管理员）
+export const adminSetPlayerMoney = (playerId, money) => {
+	return request({
+		url: '/game/admin/set-money',
+		method: 'POST',
+		data: { playerId, money }
+	});
+};
+
+// 获取所有玩家列表（管理功能）
+export const getAllPlayers = () => {
+	return request({
+		url: '/game/players',
+		method: 'GET'
+	});
+};
