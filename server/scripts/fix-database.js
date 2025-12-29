@@ -11,23 +11,27 @@ dotenv.config({ path: "./.env" });
  * 2. 重置被截断的密码
  */
 async function fixDatabase() {
-	// 直接创建数据库连接
-	const pool = mysql.createPool({
+	// Railway 自动注入的环境变量
+	const dbConfig = {
 		connectionLimit: 10,
-		database: process.env.MYSQL_DATABASE || process.env.DB_NAME,
-		host: process.env.MYSQLHOST || process.env.DB_HOST,
-		password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD,
-		port: process.env.MYSQLPORT || process.env.DB_PORT || 3306,
+		database: process.env.MYSQLDATABASE || process.env.MYSQL_DATABASE || process.env.DB_NAME || "railway",
+		host: process.env.MYSQLHOST || process.env.DB_HOST || "localhost",
+		password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || "",
+		port: parseInt(process.env.MYSQLPORT || process.env.DB_PORT || "3306"),
 		queueLimit: 0,
-		user: process.env.MYSQLUSER || process.env.DB_USER,
+		user: process.env.MYSQLUSER || process.env.DB_USER || "root",
 		waitForConnections: true
-	});
+	};
 
 	console.log("🔌 数据库连接信息:");
-	console.log(`   主机: ${process.env.MYSQLHOST || process.env.DB_HOST}`);
-	console.log(`   端口: ${process.env.MYSQLPORT || process.env.DB_PORT || 3306}`);
-	console.log(`   用户: ${process.env.MYSQLUSER || process.env.DB_USER}`);
-	console.log(`   数据库: ${process.env.MYSQL_DATABASE || process.env.DB_NAME}\n`);
+	console.log(`   主机: ${dbConfig.host}`);
+	console.log(`   端口: ${dbConfig.port}`);
+	console.log(`   用户: ${dbConfig.user}`);
+	console.log(`   数据库: ${dbConfig.database}`);
+	console.log(`   密码: ${dbConfig.password ? "***" : "(空)"}\n`);
+
+	// 直接创建数据库连接
+	const pool = mysql.createPool(dbConfig);
 
 	const connection = await pool.getConnection();
 
