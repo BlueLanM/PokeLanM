@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import * as gameAPI from "../../api/game";
 import Message from "../../components/Message";
 import Button from "../../components/Button";
-import Input from "../../components/Input";
 import Modal from "../../components/Modal";
 import Pokedex from "../pokedex";
 import "./index.css";
@@ -107,8 +106,15 @@ const PokemonGame = () => {
 
 			if (data.success) {
 				if (data.caught) {
-					// 捕捉成功 - 构建包含经验奖励的信息
+					// 捕捉成功 - 构建包含经验和金币奖励的信息
 					let catchMessage = data.message;
+					
+					// 显示金币奖励
+					if (data.catchReward) {
+						catchMessage += `\n💰 获得 ${data.catchReward} 金币`;
+					}
+					
+					// 显示经验奖励
 					if (data.expResult) {
 						catchMessage += `\n⭐ ${selectedPokemon.pokemon_name} 获得 ${data.expResult.expGained} 经验值`;
 						if (data.expResult.leveledUp) {

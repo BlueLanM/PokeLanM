@@ -261,9 +261,15 @@ export const catchPokemon = async(req, res) => {
 				expResult = await GameModel.addExpToPokemon(playerPokemonId, expGained);
 			}
 
+			// 计算捕捉金币奖励 (基于野生宝可梦等级)
+			const wildLevel = pokemon.level || 10;
+			const catchReward = Math.floor(wildLevel * 10 + Math.random() * 20 + 10); // 等级*10 + 10-30随机金币
+			await GameModel.updatePlayerMoney(playerId, catchReward);
+
 			if (partyId) {
 				return res.json({
 					caught: true,
+					catchReward,
 					expResult,
 					location: "party",
 					message: `使用${pokeball.name}成功捕捉 ${pokemon.name}！已加入背包。`,
@@ -275,6 +281,7 @@ export const catchPokemon = async(req, res) => {
 				await GameModel.addToStorage(playerId, pokemon);
 				return res.json({
 					caught: true,
+					catchReward,
 					expResult,
 					location: "storage",
 					message: `使用${pokeball.name}成功捕捉 ${pokemon.name}！背包已满，已放入仓库。`,
