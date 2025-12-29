@@ -292,32 +292,6 @@ export const setPlayerMoney = async(playerId, amount) => {
 	}
 };
 
-// 设置玩家为管理员
-export const setPlayerAdmin = async(playerId, isAdmin) => {
-	try {
-		await pool.query(
-			"UPDATE players SET is_admin = ? WHERE id = ?",
-			[isAdmin, playerId]
-		);
-		return { success: true };
-	} catch (error) {
-		return { message: error.message, success: false };
-	}
-};
-
-// 获取所有玩家列表（包含管理员状态）
-export const getAllPlayers = async() => {
-	try {
-		const [rows] = await pool.query(
-			"SELECT id, name, money, pokemon_caught, gyms_defeated, is_admin, created_at FROM players ORDER BY created_at DESC"
-		);
-		return rows;
-	} catch (error) {
-		console.error("Error getting all players:", error);
-		return [];
-	}
-};
-
 // 背包相关操作
 export const getPlayerParty = async(playerId) => {
 	const [rows] = await pool.query(

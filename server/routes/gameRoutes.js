@@ -44,7 +44,5 @@ router.get("/game/special-badges/:playerId", gameController.getSpecialBadges);
 
 // 管理员功能
 router.post("/game/admin/set-money", gameController.adminSetPlayerMoney);
-router.post("/game/admin/set-admin", gameController.adminSetPlayerAdmin);
-router.get("/game/admin/players", gameController.adminGetAllPlayers);
 
 export default router;
