@@ -597,3 +597,35 @@ export const getSpecialBadges = async(req, res) => {
 		res.status(500).json({ error: error.message });
 	}
 };
+
+// ========== 管理员功能 ==========
+
+// 管理员设置玩家金币
+export const adminSetPlayerMoney = async(req, res) => {
+	try {
+		const { playerId, money } = req.body;
+
+		if (!playerId || money === undefined) {
+			return res.status(400).json({ error: "玩家ID和金币数量不能为空" });
+		}
+
+		if (money < 0) {
+			return res.status(400).json({ error: "金币数量不能为负数" });
+		}
+
+		const result = await GameModel.setPlayerMoney(playerId, money);
+
+		if (result.success) {
+			const player = await GameModel.getPlayer(playerId);
+			res.json({
+				message: `已将玩家 ${player.name} 的金币设置为 ${money}`,
+				money: player.money,
+				success: true
+			});
+		} else {
+			res.status(400).json({ error: result.message });
+		}
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};

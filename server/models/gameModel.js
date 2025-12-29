@@ -267,6 +267,19 @@ export const updatePlayerMoney = async(playerId, amount) => {
 	);
 };
 
+// 管理员设置玩家金币（直接设置，不是增加）
+export const setPlayerMoney = async(playerId, amount) => {
+	try {
+		await pool.query(
+			"UPDATE players SET money = ? WHERE id = ?",
+			[amount, playerId]
+		);
+		return { success: true };
+	} catch (error) {
+		return { message: error.message, success: false };
+	}
+};
+
 // 背包相关操作
 export const getPlayerParty = async(playerId) => {
 	const [rows] = await pool.query(
