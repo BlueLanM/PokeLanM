@@ -58,7 +58,6 @@ const PokemonGame = () => {
 			}
 
 			const data = await gameAPI.getPlayerInfo(playerId);
-			console.log("玩家数据加载:", data); // 添加调试日志
 			setPlayer(data.player);
 			setPlayerParty(data.party || []);
 			setItems(data.items || []);
