@@ -22,14 +22,15 @@ export const initGameTables = async() => {
       )
     `);
 
-		// 添加密码字段（如果表已存在但没有该字段）
+		// 修改密码字段长度（确保足够存储bcrypt哈希）
 		try {
 			await connection.query(`
         ALTER TABLE players 
-        ADD COLUMN password VARCHAR(255) NOT NULL DEFAULT ''
+        MODIFY COLUMN password VARCHAR(255) NOT NULL
       `);
+			console.log("✓ 密码字段长度已更新为VARCHAR(255)");
 		} catch (err) {
-			// 字段已存在，忽略错误
+			console.log("✓ 密码字段已经是正确长度");
 		}
 
 		// 添加统计字段
