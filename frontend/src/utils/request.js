@@ -19,16 +19,6 @@ request.interceptors.request.use(
 			config.headers.Authorization = `Bearer ${token}`;
 		}
 
-		// 打印请求日志（开发环境）
-		if (import.meta.env.DEV) {
-			console.log('📤 Request:', {
-				url: config.url,
-				method: config.method,
-				data: config.data,
-				params: config.params,
-			});
-		}
-
 		return config;
 	},
 	(error) => {
@@ -41,14 +31,6 @@ request.interceptors.request.use(
 // 响应拦截器
 request.interceptors.response.use(
 	(response) => {
-		// 对响应数据做点什么
-		if (import.meta.env.DEV) {
-			console.log('📥 Response:', {
-				url: response.config.url,
-				status: response.status,
-				data: response.data,
-			});
-		}
 
 		// 直接返回数据部分
 		return response.data;

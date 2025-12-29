@@ -3,6 +3,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { testConnection } from "./config/database.js";
 import pokemonRoutes from "./routes/pokemonRoutes.js";
+import gameRoutes from "./routes/gameRoutes.js";
+import { initGameTables } from "./models/gameModel.js";
 
 dotenv.config();
 
@@ -29,8 +31,13 @@ app.get("/api", (req, res) => {
 // Pokemon API 路由
 app.use("/api", pokemonRoutes);
 
+// 游戏路由
+app.use("/api", gameRoutes);
+
 app.listen(PORT, async() => {
 	console.log(`🚀 Server running on port ${PORT}`);
 	// 测试数据库连接
 	await testConnection();
+	// 初始化游戏表
+	await initGameTables();
 });

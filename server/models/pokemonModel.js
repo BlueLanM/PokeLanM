@@ -15,12 +15,12 @@ export async function getPokemonById(id) {
 
 // 创建新的 Pokemon
 export async function createPokemon(pokemonData) {
-	const { name, type, hp, attack, defense, speed } = pokemonData;
+	const { name, type } = pokemonData;
 	const sql = `
-    INSERT INTO pokemons (name, type, hp, attack, defense, speed)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO pokemons (name, type)
+    VALUES (?, ?)
   `;
-	const result = await query(sql, [name, type, hp, attack, defense, speed]);
+	const result = await query(sql, [name, type]);
 	return result.insertId;
 }
 
@@ -37,22 +37,6 @@ export async function updatePokemon(id, pokemonData) {
 	if (pokemonData.type !== undefined) {
 		fields.push("type = ?");
 		values.push(pokemonData.type);
-	}
-	if (pokemonData.hp !== undefined) {
-		fields.push("hp = ?");
-		values.push(pokemonData.hp);
-	}
-	if (pokemonData.attack !== undefined) {
-		fields.push("attack = ?");
-		values.push(pokemonData.attack);
-	}
-	if (pokemonData.defense !== undefined) {
-		fields.push("defense = ?");
-		values.push(pokemonData.defense);
-	}
-	if (pokemonData.speed !== undefined) {
-		fields.push("speed = ?");
-		values.push(pokemonData.speed);
 	}
 
 	if (fields.length === 0) {

@@ -1,0 +1,26 @@
+.app {
+	position: relative;
+	min-height: 100vh;
+}
+.app-header {
+	position: fixed;
+	right: 20px;
+	top: 20px;
+	z-index: 1000;
+}
+.app-header button {
+	padding: 10px 20px;
+	border: none;
+	border-radius: 10px;
+	background: white;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	cursor: pointer;
+	font-weight: bold;
+	font-size: 14px;
+	color: #667eea;
+	transition: transform 0.2s, box-shadow 0.2s;
+}
+.app-header button:hover {
+	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+	transform: translateY(-2px);
+}

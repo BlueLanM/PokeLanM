@@ -1,0 +1,36 @@
+.pokemon {
+	display: flex;
+	flex-direction: column;
+	padding: 20px;
+}
+.pokemon-action{
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+.pokemon-header{
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 16px;
+	gap: 16px;
+}
+.pokemon-header-left {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+.pokemon-header-right {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+.pokemon-modal-content{
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+.pokemon-flex{
+	display: flex;
+	align-items: center;
+}
