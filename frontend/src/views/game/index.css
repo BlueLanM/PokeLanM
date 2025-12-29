@@ -194,6 +194,15 @@
 	margin-top: 0;
 	color: #667eea;
 }
+.items-list .item-display {
+	display: flex;
+	align-items: center;
+	margin: 5px 0;
+	padding: 10px;
+	border-left: 4px solid #667eea;
+	border-radius: 8px;
+	background: #f8f9fa;
+}
 .items-list p {
 	margin: 5px 0;
 	padding: 10px;
@@ -378,6 +387,25 @@
 	height: 150px;
 	image-rendering: pixelated;
 }
+/* 已完成道馆样式 */
+.gym-card.gym-completed {
+	position: relative;
+	border-color: #4CAF50;
+	background: linear-gradient(135deg, #f0fff4 0%, #fff 100%);
+	opacity: 0.9;
+}
+.gym-completed-badge {
+	position: absolute;
+	right: 10px;
+	top: 10px;
+	padding: 5px 12px;
+	border-radius: 15px;
+	background: linear-gradient(135deg, #4CAF50 0%, #81C784 100%);
+	box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+	font-weight: bold;
+	font-size: 0.9em;
+	color: white;
+}
 /* 商店 */
 .shop-items {
 	display: flex;
@@ -447,6 +475,54 @@
 		box-shadow: 0 3px 20px rgba(255, 215, 0, 0.8), 0 0 30px rgba(255, 215, 0, 0.4);
 	}
 }
+/* 徽章展示 */
+.badges-list {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+.badge-item {
+	display: flex;
+	align-items: center;
+	padding: 15px;
+	border: 2px solid #ffd700;
+	border-radius: 12px;
+	background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+	box-shadow: 0 4px 10px rgba(255, 215, 0, 0.2);
+	transition: all 0.3s ease;
+	gap: 15px;
+}
+.badge-item:hover {
+	box-shadow: 0 6px 15px rgba(255, 215, 0, 0.3);
+	transform: translateY(-2px);
+}
+.badge-icon {
+	filter: drop-shadow(0 2px 4px rgba(255, 215, 0, 0.5));
+	font-size: 2.5em;
+	transform: none !important;
+	animation: none !important;
+}
+.badge-info {
+	flex: 1;
+	text-align: left;
+}
+.badge-info strong {
+	display: block;
+	margin-bottom: 4px;
+	font-size: 1.2em;
+	color: #667eea;
+}
+.badge-gym {
+	margin: 0;
+	font-size: 0.95em;
+	color: #666;
+}
+.badge-date {
+	margin: 0;
+	font-style: italic;
+	font-size: 0.85em;
+	color: #999;
+}
 /* 响应式设计 */
 @media (max-width: 768px) {
 	.battle-area {
@@ -462,5 +538,12 @@
 	}
 	.menu-grid {
 		grid-template-columns: 1fr;
+	}
+	.badge-item {
+		gap: 10px;
+		padding: 12px;
+	}
+	.badge-icon {
+		font-size: 2em;
 	}
 }

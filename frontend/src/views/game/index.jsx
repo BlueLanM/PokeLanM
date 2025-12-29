@@ -26,6 +26,7 @@ const PokemonGame = () => {
 	const [selectedPokemon, setSelectedPokemon] = useState(null);
 	const [storage, setStorage] = useState([]);
 	const [items, setItems] = useState([]);
+	const [badges, setBadges] = useState([]); // 玩家徽章
 	const [gyms, setGyms] = useState([]);
 	const [currentGym, setCurrentGym] = useState(null);
 	const [shopItems, setShopItems] = useState([]);
@@ -60,6 +61,7 @@ const PokemonGame = () => {
 			setPlayer(data.player);
 			setPlayerParty(data.party || []);
 			setItems(data.items || []);
+			setBadges(data.badges || []); // 加载徽章数据
 		} catch (error) {
 			console.error("加载玩家数据错误:", error);
 			Message.error("加载玩家数据失败");
@@ -67,32 +69,32 @@ const PokemonGame = () => {
 	};
 
 
-  // 探索功能
-  const handleExplore = async () => {
-    setLoading(true);
-    try {
-      const data = await gameAPI.explore();
-      setWildPokemon(data.pokemon);
-      setInBattle(true);
-      setCatchAttempts(0); // 重置捕捉次数
-      
-      // 如果玩家有宝可梦，进入战斗模式
-      if (playerParty.length > 0) {
-        setBattleLog([data.message]);
-        setSelectedPokemon({ ...playerParty[0] }); // 背包只有一只精灵
-      } else {
-        // 如果没有宝可梦，只能捕捉
-        setBattleLog([data.message, "你还没有宝可梦，只能尝试捕捉！"]);
-        setSelectedPokemon(null);
-      }
-      
-      setCurrentView("battle");
-    } catch (error) {
-      Message.error("探索失败");
-    } finally {
-      setLoading(false);
-    }
-  };
+	// 探索功能
+	const handleExplore = async () => {
+		setLoading(true);
+		try {
+			const data = await gameAPI.explore();
+			setWildPokemon(data.pokemon);
+			setInBattle(true);
+			setCatchAttempts(0); // 重置捕捉次数
+
+			// 如果玩家有宝可梦，进入战斗模式
+			if (playerParty.length > 0) {
+				setBattleLog([data.message]);
+				setSelectedPokemon({ ...playerParty[0] }); // 背包只有一只精灵
+			} else {
+				// 如果没有宝可梦，只能捕捉
+				setBattleLog([data.message, "你还没有宝可梦，只能尝试捕捉！"]);
+				setSelectedPokemon(null);
+			}
+
+			setCurrentView("battle");
+		} catch (error) {
+			Message.error("探索失败");
+		} finally {
+			setLoading(false);
+		}
+	};
 
 	// 捕捉宝可梦
 	const handleCatch = async (pokeballTypeId) => {
@@ -108,12 +110,12 @@ const PokemonGame = () => {
 				if (data.caught) {
 					// 捕捉成功 - 构建包含经验和金币奖励的信息
 					let catchMessage = data.message;
-					
+
 					// 显示金币奖励
 					if (data.catchReward) {
 						catchMessage += `\n💰 获得 ${data.catchReward} 金币`;
 					}
-					
+
 					// 显示经验奖励
 					if (data.expResult && selectedPokemon) {
 						catchMessage += `\n⭐ ${selectedPokemon.pokemon_name} 获得 ${data.expResult.expGained} 经验值`;
@@ -122,7 +124,7 @@ const PokemonGame = () => {
 							catchMessage += `\n📈 HP +${data.expResult.hpGained}, 攻击 +${data.expResult.attackGained}`;
 						}
 					}
-					
+
 					// 更新战斗日志,显示完整信息
 					setBattleLog([...battleLog, catchMessage]);
 					Message.success(catchMessage);
@@ -135,7 +137,7 @@ const PokemonGame = () => {
 					// 捕捉失败
 					const newAttempts = catchAttempts + 1;
 					setCatchAttempts(newAttempts);
-					
+
 					if (newAttempts >= 3) {
 						// 三次都失败,返回主页
 						setBattleLog([...battleLog, data.message, "宝可梦逃跑了！"]);
@@ -179,7 +181,7 @@ const PokemonGame = () => {
 					// 构建胜利信息
 					const expInfo = data.expResult;
 					let victoryMessage = `🎉 战斗胜利！\n💰 获得 ${data.reward} 金币`;
-					
+
 					if (expInfo) {
 						victoryMessage += `\n⭐ 获得 ${expInfo.expGained} 经验值`;
 						if (expInfo.leveledUp) {
@@ -187,9 +189,9 @@ const PokemonGame = () => {
 							victoryMessage += `\n📈 HP +${expInfo.newMaxHp - selectedPokemon.max_hp}, 攻击 +${expInfo.newAttack - selectedPokemon.attack}`;
 						}
 					}
-					
+
 					Message.success(victoryMessage);
-					
+
 					if (isGym) {
 						await gameAPI.earnBadge(player.id, currentGym.id);
 					}
@@ -281,7 +283,7 @@ const PokemonGame = () => {
 	const handleBuy = async (item, quantity) => {
 		try {
 			const data = await gameAPI.buyItem(player.id, item.id, quantity);
-			Message.success(data.message,1000);
+			Message.success(data.message, 1000);
 			setPlayer({ ...player, money: data.money });
 			loadPlayer(player.id);
 		} catch (error) {
@@ -329,7 +331,7 @@ const PokemonGame = () => {
 
 			// 使用专门的选择初始精灵API，100%成功，不消耗精灵球
 			const result = await gameAPI.selectStarter(player.id, starterPokemon);
-			
+
 			if (result.success && result.caught) {
 				Message.success(`恭喜！你选择了 ${starter.name}！`);
 				// 重新加载玩家数据，确保背包更新
@@ -405,7 +407,7 @@ const PokemonGame = () => {
 
 					<div className={hasPlayerPokemon ? "battle-area" : "battle-area-single"}>
 						<div className="pokemon-display enemy">
-							<h3>{enemy.pokemon_name || enemy.name} <span style={{fontSize: '14px', color: '#888'}}>Lv.{enemy.level || 10}</span></h3>
+							<h3>{enemy.pokemon_name || enemy.name} <span style={{ fontSize: '14px', color: '#888' }}>Lv.{enemy.level || 10}</span></h3>
 							<img src={enemy.pokemon_sprite || enemy.sprite} alt={enemy.name} />
 							<div className="hp-bar">
 								<div className="hp-fill" style={{ width: `${(enemy.hp / enemy.max_hp) * 100}%` }}></div>
@@ -416,8 +418,8 @@ const PokemonGame = () => {
 
 						{hasPlayerPokemon && (
 							<div className="pokemon-display player">
-								<h3>{selectedPokemon.pokemon_name} <span style={{fontSize: '14px', color: '#888'}}>Lv.{selectedPokemon.level || 5}</span></h3>
-									<img src={selectedPokemon.pokemon_sprite || `https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/gif/${selectedPokemon.pokemon_id}.gif`} alt={selectedPokemon.pokemon_name} />
+								<h3>{selectedPokemon.pokemon_name} <span style={{ fontSize: '14px', color: '#888' }}>Lv.{selectedPokemon.level || 5}</span></h3>
+								<img src={selectedPokemon.pokemon_sprite || `https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/gif/${selectedPokemon.pokemon_id}.gif`} alt={selectedPokemon.pokemon_name} />
 								<div className="hp-bar">
 									<div className="hp-fill" style={{ width: `${(selectedPokemon.hp / selectedPokemon.max_hp) * 100}%` }}></div>
 								</div>
@@ -447,18 +449,60 @@ const PokemonGame = () => {
 					</div>
 				</div>
 
-				<Modal
-					visible={showModal}
-					title="选择精灵球"
-					onCancel={() => setShowModal(false)}
-					footer={false}
-				>
-					<div className="pokeball-list">
-						{items.filter(item => item.quantity > 0).length > 0 ? (
-							items.filter(item => item.quantity > 0).map((item) => (
+			<Modal
+				visible={showModal}
+				title="选择精灵球"
+				onCancel={() => setShowModal(false)}
+				footer={false}
+			>
+				<div className="pokeball-list">
+					{wildPokemon && items.filter(item => item.quantity > 0).length > 0 ? (
+						items.filter(item => item.quantity > 0).map((item) => {
+							// 计算实际捕捉概率
+							const ballMultiplierValues = {
+								1: 1.0,   // 精灵球
+								2: 1.5,   // 超级球
+								3: 2.0,   // 高级球
+								4: 100.0  // 大师球
+							};
+							const ballMultiplier = ballMultiplierValues[item.pokeball_type_id] || 1.0;
+							
+							// 获取宝可梦基础捕捉率（从pokemon对象）
+							const pokemonCatchRate = parseFloat(wildPokemon.catchRate) / 100 || 0.059;
+							
+							// 计算血量加成
+							const hpPercentage = wildPokemon.hp / wildPokemon.max_hp;
+							const hpBonus = (1 - hpPercentage) * 0.3;
+							
+							// 计算最终捕捉率
+							const baseCatchRate = pokemonCatchRate * ballMultiplier;
+							const finalCatchRate = Math.min(baseCatchRate + hpBonus, 0.98);
+							const catchPercentage = (finalCatchRate * 100).toFixed(1);
+							
+							// 显示倍率文本
+							const ballMultipliers = {
+								1: "1.0倍",
+								2: "1.5倍",
+								3: "2.0倍",
+								4: "必中"
+							};
+							const multiplier = ballMultipliers[item.pokeball_type_id] || "1.0倍";
+							
+							return (
 								<div key={item.pokeball_type_id} className="pokeball-item">
-									<p>{item.name} (x{item.quantity})</p>
-									<p>捕捉率: {(item.catch_rate * 100).toFixed(0)}%</p>
+									{item.image && (
+										<img 
+											src={item.image} 
+											alt={item.name} 
+											className="pokeball-image"
+											style={{ width: '48px', height: '48px', margin: '0 auto 10px' }}
+										/>
+									)}
+									<p><strong>{item.name}</strong> (x{item.quantity})</p>
+									<p>捕捉加成: {multiplier}</p>
+									<p style={{ color: '#4CAF50', fontWeight: 'bold' }}>
+										实际成功率: {item.pokeball_type_id === 4 ? '100%' : `${catchPercentage}%`}
+									</p>
 									<Button
 										onClick={() => {
 											handleCatch(item.pokeball_type_id);
@@ -468,15 +512,16 @@ const PokemonGame = () => {
 										使用
 									</Button>
 								</div>
-							))
-						) : (
-							<p style={{ padding: "20px", textAlign: "center" }}>
-								你没有精灵球了！<br />
-								请先去商店购买精灵球。
-							</p>
-						)}
-					</div>
-				</Modal>
+							);
+						})
+					) : (
+						<p style={{ padding: "20px", textAlign: "center" }}>
+							你没有精灵球了！<br />
+							请先去商店购买精灵球。
+						</p>
+					)}
+				</div>
+			</Modal>
 			</div>
 		);
 	}
@@ -507,16 +552,45 @@ const PokemonGame = () => {
 						<Button onClick={() => setCurrentView("pokedex")}>📖 图鉴</Button>
 					</div>
 
-					<div className="info-section">
-						<h3>我的精灵球</h3>
-						<div className="items-list">
-							{items.map((item) => (
-								<p key={item.pokeball_type_id}>
-									{item.name}: {item.quantity}
-								</p>
-							))}
+			<div className="info-section">
+				<h3>我的精灵球</h3>
+				<div className="items-list">
+					{items.map((item) => (
+						<div key={item.pokeball_type_id} className="item-display">
+							{item.image && (
+								<img 
+									src={item.image} 
+									alt={item.name} 
+									style={{ width: '32px', height: '32px', marginRight: '10px', verticalAlign: 'middle' }}
+								/>
+							)}
+							<span>{item.name}: {item.quantity}</span>
 						</div>
+					))}
+				</div>
+			</div>
+
+			<div className="info-section">
+				<h3>🏆 我的徽章 ({badges.length}/3)</h3>
+				{badges.length > 0 ? (
+					<div className="badges-list">
+						{badges.map((badge) => (
+							<div key={badge.id} className="badge-item">
+								<span className="badge-icon">🏅</span>
+								<div className="badge-info">
+									<strong>{badge.badge_name}</strong>
+									<p className="badge-gym">{badge.gym_name}</p>
+									<p className="badge-date">{new Date(badge.earned_at).toLocaleDateString('zh-CN')}</p>
+								</div>
+							</div>
+						))}
 					</div>
+				) : (
+					<p style={{ padding: "10px", color: "#999", textAlign: "center" }}>
+						还没有获得徽章，去挑战道馆吧！
+					</p>
+				)}
+			</div>
 				</div>
 			)}
 
@@ -524,17 +598,17 @@ const PokemonGame = () => {
 				<div className="party-view">
 					<h2>🎒 我的背包 (主战精灵)</h2>
 					<Button onClick={() => setCurrentView("home")}>返回</Button>
-				<div className="pokemon-grid">
-					{playerParty.length > 0 ? (
+					<div className="pokemon-grid">
+						{playerParty.length > 0 ? (
 							<div className="pokemon-card main-pokemon">
 								<div className="main-badge">⭐ 主战</div>
 								<img src={playerParty[0].pokemon_sprite || `https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/gif/${playerParty[0].pokemon_id}.gif`} alt={playerParty[0].pokemon_name} />
 								<h3>{playerParty[0].pokemon_name}</h3>
 								<p>等级: Lv.{playerParty[0].level}</p>
-									<p>HP: {playerParty[0].hp}/{playerParty[0].max_hp}</p>
-									<p>攻击: {playerParty[0].attack}</p>
-									<p>经验: {playerParty[0].exp || 0}/{getExpForNextLevel(playerParty[0].level)}</p>
-									{playerParty[0].level >= 100 && <p className="max-level">⭐ 满级</p>}
+								<p>HP: {playerParty[0].hp}/{playerParty[0].max_hp}</p>
+								<p>攻击: {playerParty[0].attack}</p>
+								<p>经验: {playerParty[0].exp || 0}/{getExpForNextLevel(playerParty[0].level)}</p>
+								{playerParty[0].level >= 100 && <p className="max-level">⭐ 满级</p>}
 							</div>
 						) : (
 							<p style={{ padding: "20px", textAlign: "center", color: "#999" }}>
@@ -551,24 +625,24 @@ const PokemonGame = () => {
 					<Button onClick={() => setCurrentView("home")}>返回</Button>
 					{storage.length > 0 ? (
 						<div className="pokemon-grid">
-								{storage.map((pokemon) => {
-									// 仓库使用正常图片
-									const normalSprite = pokemon.pokemon_sprite || `https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/detail/${pokemon.pokemon_id}.png`;
-									return (
-										<div key={pokemon.id} className="pokemon-card">
-											<img src={normalSprite} alt={pokemon.pokemon_name} />
-											<h3>{pokemon.pokemon_name}</h3>
-											<p>HP: {pokemon.hp}/{pokemon.max_hp}</p>
-											<p>攻击: {pokemon.attack}</p>
-											<Button 
-												size="small"
-												onClick={() => handleSwitchMainPokemon(pokemon)}
-											>
-												设为主战
-											</Button>
-										</div>
-									);
-								})}
+							{storage.map((pokemon) => {
+								// 仓库使用正常图片
+								const normalSprite = pokemon.pokemon_sprite || `https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/detail/${pokemon.pokemon_id}.png`;
+								return (
+									<div key={pokemon.id} className="pokemon-card">
+										<img src={normalSprite} alt={pokemon.pokemon_name} />
+										<h3>{pokemon.pokemon_name}</h3>
+										<p>HP: {pokemon.hp}/{pokemon.max_hp}</p>
+										<p>攻击: {pokemon.attack}</p>
+										<Button
+											size="small"
+											onClick={() => handleSwitchMainPokemon(pokemon)}
+										>
+											设为主战
+										</Button>
+									</div>
+								);
+							})}
 						</div>
 					) : (
 						<p style={{ padding: "20px", textAlign: "center", color: "#999" }}>
@@ -583,19 +657,25 @@ const PokemonGame = () => {
 					<h2>🏛️ 道馆挑战</h2>
 					<Button onClick={() => setCurrentView("home")}>返回</Button>
 					<div className="gyms-list">
-						{gyms.map((gym) => (
-							<div key={gym.id} className="gym-card">
-								<h3>{gym.name}</h3>
-								<p>馆主: {gym.leader_name}</p>
+						{gyms.map((gym) => {
+							// 检查是否已获得此道馆的徽章
+							const hasBadge = badges.some(badge => badge.gym_id === gym.id);
+							
+							return (
+								<div key={gym.id} className={`gym-card ${hasBadge ? 'gym-completed' : ''}`}>
+									{hasBadge && <div className="gym-completed-badge">✅ 已完成</div>}
+									<h3>{gym.name}</h3>
+									<p>馆主: {gym.leader_name}</p>
 									<img src={gym.pokemon_sprite || `https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/gif/${gym.pokemon_id}.gif`} alt={gym.pokemon_name} />
-								<p>宝可梦: {gym.pokemon_name}</p>
-								<p>奖励: {gym.reward_money} 金币</p>
-								<p>徽章: {gym.badge_name}</p>
-								<Button onClick={() => handleChallengeGym(gym)}>
-									挑战
-								</Button>
-							</div>
-						))}
+									<p>宝可梦: {gym.pokemon_name}</p>
+									<p>奖励: {gym.reward_money} 金币</p>
+									<p>徽章: {gym.badge_name}</p>
+									<Button onClick={() => handleChallengeGym(gym)}>
+										{hasBadge ? '再次挑战' : '挑战'}
+									</Button>
+								</div>
+							);
+						})}
 					</div>
 				</div>
 			)}
@@ -605,32 +685,52 @@ const PokemonGame = () => {
 					<h2>🏪 精灵球商店</h2>
 					<Button onClick={() => setCurrentView("home")}>返回</Button>
 					<div className="shop-items">
-						{shopItems.map((item) => (
-							<div key={item.id} className="shop-item">
-								<h3>{item.name}</h3>
-								<p>价格: {item.price} 金币</p>
-								<p>捕捉率: {(item.catch_rate * 100).toFixed(0)}%</p>
-								<div className="buy-controls">
-									<input
-										type="number"
-										min="1"
-										defaultValue="1"
-										id={`quantity-${item.id}`}
-										style={{ width: "60px", marginRight: "10px" }}
-									/>
-									<Button
-										onClick={() => {
-											const quantity = parseInt(
-												document.getElementById(`quantity-${item.id}`).value
-											);
-											handleBuy(item, quantity);
-										}}
-									>
-										购买
-									</Button>
+						{shopItems.map((item) => {
+							// 计算捕捉倍率
+							const ballMultipliers = {
+								1: "基础",
+								2: "1.5倍加成",
+								3: "2倍加成",
+								4: "必中"
+							};
+							const description = ballMultipliers[item.id] || "基础";
+							
+							return (
+								<div key={item.id} className="shop-item">
+									{item.image && (
+										<img 
+											src={item.image} 
+											alt={item.name} 
+											className="shop-item-image"
+											style={{ width: '64px', height: '64px', margin: '0 auto 10px', display: 'block' }}
+										/>
+									)}
+									<h3>{item.name}</h3>
+									<p>价格: {item.price} 金币</p>
+									<p>效果: {description}</p>
+									<p style={{ fontSize: '12px', color: '#999' }}>💡 实际捕捉率受宝可梦等级和血量影响</p>
+									<div className="buy-controls">
+										<input
+											type="number"
+											min="1"
+											defaultValue="1"
+											id={`quantity-${item.id}`}
+											style={{ width: "60px", marginRight: "10px" }}
+										/>
+										<Button
+											onClick={() => {
+												const quantity = parseInt(
+													document.getElementById(`quantity-${item.id}`).value
+												);
+												handleBuy(item, quantity);
+											}}
+										>
+											购买
+										</Button>
+									</div>
 								</div>
-							</div>
-						))}
+							);
+						})}
 					</div>
 				</div>
 			)}

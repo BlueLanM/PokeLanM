@@ -62,17 +62,44 @@ export const initGameTables = async() => {
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(50) NOT NULL,
         catch_rate DECIMAL(3,2) NOT NULL,
-        price INT NOT NULL
+        price INT NOT NULL,
+        image VARCHAR(255)
       )
     `);
 
+		// 添加 image 字段（如果表已存在但没有该字段）
+		try {
+			await connection.query(`
+        ALTER TABLE pokeball_types 
+        ADD COLUMN image VARCHAR(255)
+      `);
+			console.log("✓ 精灵球图片字段已添加");
+		} catch (err) {
+			// 字段已存在，忽略错误
+			console.log("✓ 精灵球图片字段已存在");
+		}
+
 		// 插入初始精灵球数据
 		await connection.query(`
-      INSERT IGNORE INTO pokeball_types (id, name, catch_rate, price) VALUES
-      (1, '精灵球', 0.30, 100),
-      (2, '超级球', 0.50, 300),
-      (3, '高级球', 0.70, 500),
-      (4, '大师球', 1.00, 10000)
+      INSERT IGNORE INTO pokeball_types (id, name, catch_rate, price, image) VALUES
+      (1, '精灵球', 0.30, 100, 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'),
+      (2, '超级球', 0.50, 300, 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/great-ball.png'),
+      (3, '高级球', 0.70, 500, 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png'),
+      (4, '大师球', 1.00, 10000, 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png')
+    `);
+
+		// 更新现有记录的图片（如果图片为空）
+		await connection.query(`
+      UPDATE pokeball_types SET image = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png' WHERE id = 1 AND (image IS NULL OR image = '')
+    `);
+		await connection.query(`
+      UPDATE pokeball_types SET image = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/great-ball.png' WHERE id = 2 AND (image IS NULL OR image = '')
+    `);
+		await connection.query(`
+      UPDATE pokeball_types SET image = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png' WHERE id = 3 AND (image IS NULL OR image = '')
+    `);
+		await connection.query(`
+      UPDATE pokeball_types SET image = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png' WHERE id = 4 AND (image IS NULL OR image = '')
     `);
 
 		// 玩家背包表（最多6只）
@@ -146,18 +173,36 @@ export const initGameTables = async() => {
         pokemon_sprite VARCHAR(255),
         level INT DEFAULT 20,
         hp INT DEFAULT 100,
+        max_hp INT DEFAULT 100,
         attack INT DEFAULT 25,
         reward_money INT DEFAULT 500,
         badge_name VARCHAR(50) NOT NULL
       )
     `);
 
+		// 添加 max_hp 字段（如果表已存在但没有该字段）
+		try {
+			await connection.query(`
+        ALTER TABLE gyms 
+        ADD COLUMN max_hp INT DEFAULT 100 AFTER hp
+      `);
+			console.log("✓ 道馆 max_hp 字段已添加");
+		} catch (err) {
+			// 字段已存在，忽略错误
+			console.log("✓ 道馆 max_hp 字段已存在");
+		}
+
 		// 插入初始道馆数据
 		await connection.query(`
-      INSERT IGNORE INTO gyms (id, name, leader_name, pokemon_id, pokemon_name, pokemon_sprite, level, hp, attack, reward_money, badge_name) VALUES
-      (1, '岩石道馆', '小刚', 74, 'geodude', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/74.png', 15, 80, 20, 500, '灰色徽章'),
-      (2, '水系道馆', '小霞', 120, 'staryu', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/120.png', 20, 100, 25, 800, '蓝色徽章'),
-      (3, '电系道馆', '马志士', 25, 'pikachu', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png', 25, 120, 30, 1000, '橙色徽章')
+      INSERT IGNORE INTO gyms (id, name, leader_name, pokemon_id, pokemon_name, pokemon_sprite, level, hp, max_hp, attack, reward_money, badge_name) VALUES
+      (1, '岩石道馆', '小刚', 74, 'geodude', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/74.png', 15, 80, 80, 20, 500, '灰色徽章'),
+      (2, '水系道馆', '小霞', 120, 'staryu', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/120.png', 20, 100, 100, 25, 800, '蓝色徽章'),
+      (3, '电系道馆', '马志士', 25, 'pikachu', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png', 25, 120, 120, 30, 1000, '橙色徽章')
+    `);
+
+		// 更新现有道馆数据的 max_hp（如果 max_hp 为空或0）
+		await connection.query(`
+      UPDATE gyms SET max_hp = hp WHERE max_hp IS NULL OR max_hp = 0
     `);
 
 		// 玩家徽章表
@@ -361,7 +406,7 @@ export const addToStorage = async(playerId, pokemon) => {
 // 物品相关操作
 export const getPlayerItems = async(playerId) => {
 	const [rows] = await pool.query(
-		`SELECT pi.*, pt.name, pt.catch_rate, pt.price
+		`SELECT pi.*, pt.name, pt.catch_rate, pt.price, pt.image
      FROM player_items pi
      JOIN pokeball_types pt ON pi.pokeball_type_id = pt.id
      WHERE pi.player_id = ?`,
