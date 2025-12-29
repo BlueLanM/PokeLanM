@@ -67,21 +67,6 @@ const PokemonGame = () => {
 		}
 	};
 
-	const handleCreatePlayer = async (name) => {
-		if (!name.trim()) {
-			Message.error("请输入玩家名称");
-			return;
-		}
-		try {
-			const data = await gameAPI.createPlayer(name);
-			setPlayer(data.player);
-			localStorage.setItem("pokemonGamePlayerId", data.player.id);
-			Message.success("玩家创建成功！");
-			loadPlayer(data.player.id);
-		} catch (error) {
-			Message.error(error.error || "创建玩家失败");
-		}
-	};
 
   // 探索功能
   const handleExplore = async () => {
@@ -349,31 +334,13 @@ const PokemonGame = () => {
 		}
 	};
 
-	// 渲染创建玩家界面
+	// 如果没有玩家数据，显示加载中（正常情况下不会出现，因为已经通过登录界面）
 	if (!player) {
 		return (
 			<div className="pokemon-game">
 				<div className="create-player">
 					<h1>🎮 宝可梦游戏</h1>
-					<p>欢迎来到宝可梦世界！</p>
-					<Input
-						type="text"
-						placeholder="输入你的名字"
-						id="playerName"
-						onKeyPress={(e) => {
-							if (e.key === "Enter") {
-								handleCreatePlayer(e.target.value);
-							}
-						}}
-					/>
-					<Button
-						onClick={() => {
-							const name = document.getElementById("playerName").value;
-							handleCreatePlayer(name);
-						}}
-					>
-						开始冒险
-					</Button>
+					<p>正在加载游戏数据...</p>
 				</div>
 			</div>
 		);
