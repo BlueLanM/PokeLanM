@@ -164,40 +164,41 @@ const PokemonGame = () => {
 				isGym
 			);
 
-		setBattleLog([...battleLog, ...data.battleLog]);
+			setBattleLog([...battleLog, ...data.battleLog]);
 
-		if (data.battleEnd) {
-			if (data.victory) {
-				// 构建胜利信息
-				const expInfo = data.expResult;
-				let victoryMessage = `🎉 战斗胜利！\n💰 获得 ${data.reward} 金币`;
-				
-				if (expInfo) {
-					victoryMessage += `\n⭐ 获得 ${expInfo.expGained} 经验值`;
-					if (expInfo.leveledUp) {
-						victoryMessage += `\n🎊 ${selectedPokemon.pokemon_name} 升到了 Lv.${expInfo.newLevel}！`;
-						victoryMessage += `\n📈 HP +${expInfo.newMaxHp - selectedPokemon.max_hp}, 攻击 +${expInfo.newAttack - selectedPokemon.attack}`;
+			if (data.battleEnd) {
+				if (data.victory) {
+					// 构建胜利信息
+					const expInfo = data.expResult;
+					let victoryMessage = `🎉 战斗胜利！\n💰 获得 ${data.reward} 金币`;
+					
+					if (expInfo) {
+						victoryMessage += `\n⭐ 获得 ${expInfo.expGained} 经验值`;
+						if (expInfo.leveledUp) {
+							victoryMessage += `\n🎊 ${selectedPokemon.pokemon_name} 升到了 Lv.${expInfo.newLevel}！`;
+							victoryMessage += `\n📈 HP +${expInfo.newMaxHp - selectedPokemon.max_hp}, 攻击 +${expInfo.newAttack - selectedPokemon.attack}`;
+						}
 					}
+					
+					Message.success(victoryMessage);
+					
+					if (isGym) {
+						await gameAPI.earnBadge(player.id, currentGym.id);
+					}
+					// 不再在前端直接更新金币，而是从服务器重新加载数据
+				} else {
+					Message.error("战斗失败！");
 				}
-				
-				Message.success(victoryMessage);
-				
+				// 战斗结束后返回主页
+				setInBattle(false);
+				setCurrentView("home");
 				if (isGym) {
-					await gameAPI.earnBadge(player.id, currentGym.id);
+					setCurrentGym(null);
+				} else {
+					setWildPokemon(null);
 				}
-				setPlayer({ ...player, money: player.money + data.reward });
-			} else {
-				Message.error("战斗失败！");
-			}
-			// 战斗结束后返回主页
-			setInBattle(false);
-			setCurrentView("home");
-			if (isGym) {
-				setCurrentGym(null);
-			} else {
-				setWildPokemon(null);
-			}
-			loadPlayer(player.id);
+				// 重新加载玩家数据，从数据库获取更新后的金币
+				loadPlayer(player.id);
 			} else {
 				setSelectedPokemon(data.playerPokemon);
 				if (isGym) {

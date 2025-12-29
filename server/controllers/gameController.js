@@ -322,6 +322,13 @@ export const attack = async(req, res) => {
 			// 战斗胜利后恢复HP
 			await GameModel.restorePokemonHp(playerPokemon.id);
 
+			// 更新玩家金币（添加奖励金币到数据库）
+			// 从数据库获取该宝可梦对应的玩家ID
+			const playerId = playerPokemon.player_id;
+			if (playerId) {
+				await GameModel.updatePlayerMoney(playerId, reward);
+			}
+
 			const expLog = expResult.leveledUp
 				? [expResult.message]
 				: [`${playerName} 获得了 ${expGained} 经验值！`];
@@ -331,6 +338,7 @@ export const attack = async(req, res) => {
 				battleLog: [...battleLog, `${enemyName} 被击败了！`, `获得 ${reward} 金币！`, ...expLog],
 				enemyPokemon,
 				expResult,
+				playerId,
 				reward,
 				success: true,
 				victory: true

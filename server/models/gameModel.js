@@ -1,4 +1,8 @@
 import pool from "../config/database.js";
+import bcrypt from "bcrypt";
+
+// 密码加密的盐值轮数
+const SALT_ROUNDS = 10;
 
 // 初始化游戏数据表
 export const initGameTables = async() => {
@@ -192,11 +196,14 @@ export const initGameTables = async() => {
 	}
 };
 
-// 玩家相关操作 - 注册（带密码）
+// 玩家相关操作 - 注册（带密码加密）
 export const registerPlayer = async(name, password) => {
+	// 使用 bcrypt 加密密码
+	const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
 	const [result] = await pool.query(
 		"INSERT INTO players (name, password, money, pokemon_caught, gyms_defeated) VALUES (?, ?, 1000, 0, 0)",
-		[name, password]
+		[name, hashedPassword]
 	);
 	// 给新玩家初始物品
 	await pool.query(
@@ -206,13 +213,28 @@ export const registerPlayer = async(name, password) => {
 	return result.insertId;
 };
 
-// 玩家登录验证
+// 玩家登录验证（使用 bcrypt 比对密码）
 export const loginPlayer = async(name, password) => {
+	// 先根据用户名查询玩家
 	const [rows] = await pool.query(
-		"SELECT * FROM players WHERE name = ? AND password = ?",
-		[name, password]
+		"SELECT * FROM players WHERE name = ?",
+		[name]
 	);
-	return rows[0];
+
+	if (rows.length === 0) {
+		return null; // 用户不存在
+	}
+
+	const player = rows[0];
+
+	// 使用 bcrypt 比对密码
+	const isPasswordValid = await bcrypt.compare(password, player.password);
+
+	if (!isPasswordValid) {
+		return null; // 密码错误
+	}
+
+	return player; // 返回玩家信息
 };
 
 // 旧版本创建玩家（兼容性，无密码）
