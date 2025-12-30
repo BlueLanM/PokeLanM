@@ -580,27 +580,40 @@ const PokemonGame = () => {
 				</div>
 			</div>
 
-			<div className="info-section">
-				<h3>🏆 我的徽章 ({badges.length}/3)</h3>
-				{badges.length > 0 ? (
-					<div className="badges-list">
-						{badges.map((badge) => (
-							<div key={badge.id} className="badge-item">
-								<span className="badge-icon">🏅</span>
-								<div className="badge-info">
-									<strong>{badge.badge_name}</strong>
-									<p className="badge-gym">{badge.gym_name}</p>
-									<p className="badge-date">{new Date(badge.earned_at).toLocaleDateString('zh-CN')}</p>
+				<div className="info-section">
+					<h3>🏆 我的徽章 ({badges.length}/3)</h3>
+					{badges.length > 0 ? (
+						<div className="badges-list">
+							{badges.map((badge) => (
+								<div key={badge.id} className="badge-item">
+									{badge.badge_image ? (
+										<img 
+											src={badge.badge_image} 
+											alt={badge.badge_name}
+											className="badge-icon"
+											style={{ 
+												width: "60px", 
+												height: "60px", 
+												objectFit: "contain"
+											}}
+										/>
+									) : (
+										<span className="badge-icon">🏅</span>
+									)}
+									<div className="badge-info">
+										<strong>{badge.badge_name}</strong>
+										<p className="badge-gym">{badge.gym_name}</p>
+										<p className="badge-date">{new Date(badge.earned_at).toLocaleDateString('zh-CN')}</p>
+									</div>
 								</div>
-							</div>
-						))}
-					</div>
-				) : (
-					<p style={{ padding: "10px", color: "#999", textAlign: "center" }}>
-						还没有获得徽章，去挑战道馆吧！
-					</p>
-				)}
-			</div>
+							))}
+						</div>
+					) : (
+						<p style={{ padding: "10px", color: "#999", textAlign: "center" }}>
+							还没有获得徽章，去挑战道馆吧！
+						</p>
+					)}
+				</div>
 				</div>
 			)}
 
@@ -686,7 +699,20 @@ const PokemonGame = () => {
 									<img src={gym.pokemon_sprite || `https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/gif/${gym.pokemon_id}.gif`} alt={gym.pokemon_name} />
 									<p>宝可梦: {gym.pokemon_name}</p>
 									<p>奖励: {gym.reward_money} 金币</p>
-									<p>徽章: {gym.badge_name}</p>
+									<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', margin: '10px 0' }}>
+										{gym.badge_image && (
+											<img 
+												src={gym.badge_image} 
+												alt={gym.badge_name}
+												style={{ 
+													width: "50px", 
+													height: "50px", 
+													objectFit: "contain"
+												}}
+											/>
+										)}
+										<span>徽章: {gym.badge_name}</span>
+									</div>
 									<Button onClick={() => handleChallengeGym(gym)}>
 										{hasBadge ? '再次挑战' : '挑战'}
 									</Button>
