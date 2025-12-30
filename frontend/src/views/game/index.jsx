@@ -458,36 +458,39 @@ const PokemonGame = () => {
 			>
 				<div className="pokeball-list">
 					{wildPokemon && items.filter(item => item.quantity > 0).length > 0 ? (
-						items.filter(item => item.quantity > 0).map((item) => {
-							// 计算实际捕捉概率
-							const ballMultiplierValues = {
-								1: 1.0,   // 精灵球
-								2: 1.5,   // 超级球
-								3: 2.0,   // 高级球
-								4: 100.0  // 大师球
-							};
-							const ballMultiplier = ballMultiplierValues[item.pokeball_type_id] || 1.0;
-							
-							// 获取宝可梦基础捕捉率（从pokemon对象）
-							const pokemonCatchRate = parseFloat(wildPokemon.catchRate) / 100 || 0.059;
-							
-							// 计算血量加成
-							const hpPercentage = wildPokemon.hp / wildPokemon.max_hp;
-							const hpBonus = (1 - hpPercentage) * 0.3;
-							
-							// 计算最终捕捉率
-							const baseCatchRate = pokemonCatchRate * ballMultiplier;
-							const finalCatchRate = Math.min(baseCatchRate + hpBonus, 0.98);
-							const catchPercentage = (finalCatchRate * 100).toFixed(1);
-							
-							// 显示倍率文本
-							const ballMultipliers = {
-								1: "1.0倍",
-								2: "1.5倍",
-								3: "2.0倍",
-								4: "必中"
-							};
-							const multiplier = ballMultipliers[item.pokeball_type_id] || "1.0倍";
+							items.filter(item => item.quantity > 0).map((item) => {
+								// 计算实际捕捉概率（与后端逻辑保持一致）
+								const ballMultiplierValues = {
+									1: 1.0,   // 精灵球
+									2: 1.5,   // 超级球
+									3: 2.0,   // 高级球
+									4: 100.0  // 大师球
+								};
+								const ballMultiplier = ballMultiplierValues[item.pokeball_type_id] || 1.0;
+								
+								// 获取宝可梦基础捕捉率（从pokemon对象）
+								// catchRate 格式为 "5.9%" 这样的字符串，parseFloat会提取数字部分
+								const catchRateStr = wildPokemon.catchRate || "5.9%";
+								const pokemonCatchRate = parseFloat(catchRateStr) / 100 || 0.059;
+								
+								// 计算血量加成
+								const hpPercentage = wildPokemon.hp / wildPokemon.max_hp;
+								const hpBonus = (1 - hpPercentage) * 0.3;
+								
+								// 计算最终捕捉率（与后端逻辑一致）
+								const baseCatchRate = pokemonCatchRate * ballMultiplier;
+								// 大师球必中，其他球最高98%捕捉率
+								const finalCatchRate = item.pokeball_type_id === 4 ? 1.0 : Math.min(baseCatchRate + hpBonus, 0.98);
+								const catchPercentage = (finalCatchRate * 100).toFixed(1);
+								
+								// 显示倍率文本
+								const ballMultipliers = {
+									1: "1.0倍",
+									2: "1.5倍",
+									3: "2.0倍",
+									4: "必中"
+								};
+								const multiplier = ballMultipliers[item.pokeball_type_id] || "1.0倍";
 							
 							return (
 								<div key={item.pokeball_type_id} className="pokeball-item">
