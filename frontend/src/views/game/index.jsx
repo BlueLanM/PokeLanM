@@ -443,14 +443,14 @@ const PokemonGame = () => {
 					<div className="battle-actions">
 						{hasPlayerPokemon && (
 							<>
-								<Button onClick={() => handleAttack(isGym, "random")}>⚔️ 随机攻击</Button>
-								<Button onClick={() => handleAttack(isGym, "fixed")}>🎯 固定伤害</Button>
+								<Button onClick={() => handleAttack(isGym, "random")}>⚔️ 攻击</Button>
+								<Button onClick={() => handleAttack(isGym, "fixed")}>🎯 宽恕</Button>
 							</>
 						)}
 						{!isGym && (
 							<Button onClick={() => {
 								setShowModal(true);
-							}}>� 捕捉</Button>
+							}}>💫 捕捉</Button>
 						)}
 						<Button onClick={handleRun}>🏃 {hasPlayerPokemon ? '逃跑' : '离开'}</Button>
 					</div>

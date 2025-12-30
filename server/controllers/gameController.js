@@ -138,18 +138,19 @@ export const explore = async(req, res) => {
 
 		// 根据玩家等级动态调整野生宝可梦等级和属性
 		const basePlayerLevel = playerLevel || 5;
-		const wildLevel = Math.max(1, Math.floor(basePlayerLevel + Math.random() * 6 - 3)); // 玩家等级 ±3 级
+		// 野生宝可梦等级略低于玩家，范围：玩家等级的70%-90%
+		const wildLevel = Math.max(1, Math.floor(basePlayerLevel * (0.7 + Math.random() * 0.2)));
 
 		// 基于等级计算血量和攻击力
-		// HP = 基础值 + 等级加成
-		const baseHp = 30;
-		const hpPerLevel = 5; // 每级增加5点HP
-		const maxHp = baseHp + (wildLevel * hpPerLevel) + Math.floor(Math.random() * 20); // 加一些随机性
+		// HP = 基础值 + 等级加成（降低成长率）
+		const baseHp = 25;
+		const hpPerLevel = 3; // 每级增加3点HP（从5降到3）
+		const maxHp = baseHp + (wildLevel * hpPerLevel) + Math.floor(Math.random() * 15); // 随机性也降低
 
-		// 攻击力也根据等级调整
-		const baseAttack = 5;
-		const attackPerLevel = 2; // 每级增加2点攻击
-		const attack = baseAttack + (wildLevel * attackPerLevel) + Math.floor(Math.random() * 5);
+		// 攻击力也根据等级调整（降低攻击力）
+		const baseAttack = 3;
+		const attackPerLevel = 1.5; // 每级增加1.5点攻击（从2降到1.5）
+		const attack = Math.floor(baseAttack + (wildLevel * attackPerLevel) + Math.random() * 3); // 随机性降低
 
 		const pokemon = {
 			attack,
@@ -329,20 +330,24 @@ export const attack = async(req, res) => {
 
 		// 根据攻击类型计算伤害
 		if (attackType === "fixed") {
-			// 固定伤害攻击 - 固定10点伤害
-			playerDamage = 10;
-			attackName = "固定伤害攻击";
+			// 宽恕伤害攻击 - 随机0-9点伤害
+			playerDamage = Math.floor(Math.random() * 10); // 0 到 9
+			attackName = "宽恕攻击";
 		} else {
 			// 随机攻击 - 0到最大攻击力之间随机
 			playerDamage = Math.floor(Math.random() * (playerPokemon.attack + 1)); // 0 到 attack
-			attackName = "随机攻击";
+			attackName = "攻击";
 		}
 
 		enemyPokemon.hp -= playerDamage;
 
 		const playerName = playerPokemon.pokemon_name || playerPokemon.name;
 		const enemyName = enemyPokemon.pokemon_name || enemyPokemon.name;
-		const battleLog = [`你的 ${playerName} 使用了【${attackName}】，造成了 ${playerDamage} 点伤害！`];
+
+		// 根据伤害值显示不同的战斗日志
+		const battleLog = playerDamage === 0
+			? [`你的 ${playerName} 使用了【${attackName}】，但攻击未命中！`]
+			: [`你的 ${playerName} 使用了【${attackName}】，造成了 ${playerDamage} 点伤害！`];
 
 		if (enemyPokemon.hp <= 0) {
 			enemyPokemon.hp = 0;
@@ -382,9 +387,22 @@ export const attack = async(req, res) => {
 		}
 
 		// 敌方宝可梦反击
-		const enemyDamage = Math.floor(Math.random() * enemyPokemon.attack) + 3;
+		// 5%几率闪避（造成0伤害）
+		const dodgeChance = Math.random();
+		let enemyDamage = 0;
+
+		if (dodgeChance < 0.05) {
+			// 5%几率闪避
+			enemyDamage = 0;
+			battleLog.push(`敌方 ${enemyName} 发起攻击，但你的 ${playerName} 成功闪避了！`);
+		} else {
+			// 95%几率正常攻击
+			enemyDamage = Math.floor(Math.random() * enemyPokemon.attack) + 3;
+			playerPokemon.hp -= enemyDamage;
+			battleLog.push(`敌方 ${enemyName} 造成了 ${enemyDamage} 点伤害！`);
+		}
+
 		playerPokemon.hp -= enemyDamage;
-		battleLog.push(`敌方 ${enemyName} 造成了 ${enemyDamage} 点伤害！`);
 
 		if (playerPokemon.hp <= 0) {
 			playerPokemon.hp = 0;
