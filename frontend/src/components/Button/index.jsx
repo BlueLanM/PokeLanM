@@ -1,4 +1,4 @@
-import './index.css';
+import './index.scss';
 
 // type: 'default' | 'primary' | 'dashed' | 'link' | 'text';
 

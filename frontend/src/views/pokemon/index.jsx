@@ -9,7 +9,7 @@ import { pokemonApi } from '../../api';
 import * as gameAPI from '../../api/gameAPI';
 import { useForm } from '../../hooks/useForm';
 
-import "./index.css"
+import "./index.scss"
 
 const Pokemon = () => {
 	// 页面视图状态

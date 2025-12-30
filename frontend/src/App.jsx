@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import "./App.css";
+import "./App.scss";
 import Pokemon from "./views/pokemon";
 import PokemonGame from "./views/game";
 import Auth from "./views/auth";

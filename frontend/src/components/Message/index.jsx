@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
-import './index.css';
+import './index.scss';
 
 // 单条消息组件
 const MessageItem = ({ content, type, duration, onClose, id }) => {

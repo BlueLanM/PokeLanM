@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getPokedex, getSpecialBadges } from '../../api/gameAPI';
-import './index.css';
+import './index.scss';
 
 const Pokedex = ({ playerId }) => {
 	const [pokedex, setPokedex] = useState([]);

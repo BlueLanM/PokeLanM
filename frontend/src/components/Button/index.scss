@@ -1,0 +1,214 @@
+// 颜色变量
+$primary-color: #1890ff;
+$primary-hover: #40a9ff;
+$primary-active: #096dd9;
+$danger-color: #ff4d4f;
+$danger-hover: #ff7875;
+$danger-active: #d9363e;
+$border-color: #d9d9d9;
+$text-color: rgba(0, 0, 0, 0.85);
+.btn {
+	display: inline-flex;
+	position: relative;
+	justify-content: center;
+	align-items: center;
+	border: 1px solid transparent;
+	outline: none;
+	cursor: pointer;
+	user-select: none;
+	line-height: 1.5715;
+	text-align: center;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+	font-weight: 400;
+	white-space: nowrap;
+	transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+	touch-action: manipulation;
+	gap: 8px;
+	&:focus {
+		outline: none;
+	}
+
+	// 仅在键盘导航时显示焦点样式
+	&:focus-visible {
+		outline: 2px solid $primary-color;
+		outline-offset: 2px;
+	}
+
+	// 点击效果
+	&:active:not(.btn-disabled) {
+		transform: scale(0.97);
+		transition: transform 0.1s ease;
+	}
+
+	// 尺寸
+	&-large {
+		padding: 6.4px 15px;
+		border-radius: 5px;
+		height: 40px;
+		font-size: 16px;
+	}
+	&-middle {
+		padding: 4px 15px;
+		border-radius: 5px;
+		height: 32px;
+		font-size: 14px;
+	}
+	&-small {
+		padding: 0 7px;
+		border-radius: 3px;
+		height: 24px;
+		font-size: 14px;
+	}
+
+	// 类型
+	&-default {
+		border-color: $border-color;
+		background: #fff;
+		color: $text-color;
+		&:hover:not(.btn-disabled) {
+			border-color: $primary-hover;
+			color: $primary-hover;
+		}
+		&:active:not(.btn-disabled) {
+			border-color: $primary-active;
+			background: #fafafa;
+		}
+	}
+	&-primary {
+		border-color: $primary-color;
+		background: $primary-color;
+		color: #fff;
+		&:hover:not(.btn-disabled) {
+			border-color: $primary-hover;
+			background: $primary-hover;
+		}
+		&:active:not(.btn-disabled) {
+			border-color: $primary-active;
+			background: $primary-active;
+		}
+	}
+	&-dashed {
+		border-style: dashed;
+		border-color: $border-color;
+		background: #fff;
+		color: $text-color;
+		&:hover:not(.btn-disabled) {
+			border-color: $primary-hover;
+			color: $primary-hover;
+		}
+		&:active:not(.btn-disabled) {
+			border-color: $primary-active;
+			background: #fafafa;
+		}
+	}
+	&-text {
+		display: inline-block;
+		border-color: transparent;
+		background: transparent;
+		&:hover:not(.btn-disabled) {
+			background: rgba(0, 0, 0, 0.018);
+		}
+		&:active:not(.btn-disabled) {
+			background: rgba(0, 0, 0, 0.045);
+		}
+	}
+	&-link {
+		border-color: transparent;
+		background: transparent;
+		color: $primary-color;
+		&:hover:not(.btn-disabled) {
+			color: $primary-hover;
+		}
+		&:active:not(.btn-disabled) {
+			color: $primary-active;
+		}
+	}
+
+	// 危险按钮
+	&-danger {
+		&.btn-primary {
+			border-color: $danger-color;
+			background: $danger-color;
+			&:hover:not(.btn-disabled) {
+				border-color: $danger-hover;
+				background: $danger-hover;
+			}
+			&:active:not(.btn-disabled) {
+				border-color: $danger-active;
+				background: $danger-active;
+			}
+		}
+		&.btn-default {
+			border-color: $danger-color;
+			color: $danger-color;
+			&:hover:not(.btn-disabled) {
+				border-color: $danger-hover;
+				color: $danger-hover;
+			}
+			&:active:not(.btn-disabled) {
+				border-color: $danger-active;
+				color: $danger-active;
+			}
+		}
+	}
+
+	// 幽灵按钮
+	&-ghost {
+		border-color: #fff;
+		background: transparent;
+		color: #fff;
+		&:hover:not(.btn-disabled) {
+			border-color: $primary-hover;
+			color: $primary-hover;
+		}
+		&:active:not(.btn-disabled) {
+			border-color: $primary-active;
+			color: $primary-active;
+		}
+	}
+
+	// 禁用状态
+	&-disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	// 块级按钮
+	&-block {
+		display: flex;
+		width: 100%;
+	}
+
+	// 形状
+	&-circle {
+		padding: 4px;
+		border-radius: 50%;
+		min-width: 32px;
+	}
+	&-round {
+		border-radius: 32px;
+	}
+
+	// 加载动画
+	&-loading-icon {
+		display: inline-flex;
+	}
+	&-icon {
+		display: inline-flex;
+		align-items: center;
+	}
+}
+.spinner {
+	display: inline-block;
+	border: 2px solid currentcolor;
+	border-top-color: transparent;
+	border-radius: 50%;
+	width: 14px;
+	height: 14px;
+	animation: spinner 0.6s linear infinite;
+}
+@keyframes spinner {
+	to {
+		transform: rotate(360deg);
+	}
+}

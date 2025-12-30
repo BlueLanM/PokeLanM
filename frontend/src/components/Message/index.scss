@@ -1,0 +1,120 @@
+// 颜色变量
+$success-color: #52c41a;
+$error-color: #ff4d4f;
+$info-color: #1890ff;
+$warning-color: #faad14;
+$text-color: rgba(0, 0, 0, 0.88);
+.message {
+	&-container {
+		position: fixed;
+		right: 24px;
+		top: 24px;
+		z-index: 9999;
+		max-width: 400px;
+		pointer-events: none;
+	}
+	&-item {
+		display: flex;
+		align-items: flex-start;
+		margin-bottom: 12px;
+		padding: 14px 18px;
+		border: 1px solid rgba(0, 0, 0, 0.06);
+		border-radius: 8px;
+		min-width: 320px;
+		background: #fff;
+		box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08),
+			0 3px 6px -4px rgba(0, 0, 0, 0.12),
+			0 9px 28px 8px rgba(0, 0, 0, 0.05);
+		backdrop-filter: blur(8px);
+		pointer-events: auto;
+		animation: message-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		&:hover {
+			box-shadow: 0 8px 20px 0 rgba(0, 0, 0, 0.12),
+				0 4px 8px -4px rgba(0, 0, 0, 0.16),
+				0 12px 32px 8px rgba(0, 0, 0, 0.08);
+			transform: translateY(-2px);
+			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		}
+	}
+	&-icon {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		flex-shrink: 0;
+		margin-right: 12px;
+		width: 20px;
+		height: 20px;
+		line-height: 1;
+		font-weight: bold;
+		font-size: 18px;
+	}
+	&-content {
+		flex: 1;
+		line-height: 1.6;
+		font-size: 14px;
+		color: $text-color;
+		word-break: break-word;
+	}
+
+	// Success 样式
+	&-success {
+		border-left: 4px solid $success-color;
+		background: linear-gradient(135deg, #f6ffed 0%, #fff 100%);
+		.message-icon {
+			border-radius: 50%;
+			width: 24px;
+			height: 24px;
+			background: rgba($success-color, 0.1);
+			color: $success-color;
+		}
+	}
+
+	// Error 样式
+	&-error {
+		border-left: 4px solid $error-color;
+		background: linear-gradient(135deg, #fff2f0 0%, #fff 100%);
+		.message-icon {
+			border-radius: 50%;
+			width: 24px;
+			height: 24px;
+			background: rgba($error-color, 0.1);
+			color: $error-color;
+		}
+	}
+
+	// Info 样式
+	&-info {
+		border-left: 4px solid $info-color;
+		background: linear-gradient(135deg, #e6f7ff 0%, #fff 100%);
+		.message-icon {
+			border-radius: 50%;
+			width: 24px;
+			height: 24px;
+			background: rgba($info-color, 0.1);
+			color: $info-color;
+		}
+	}
+
+	// Warning 样式
+	&-warning {
+		border-left: 4px solid $warning-color;
+		background: linear-gradient(135deg, #fffbe6 0%, #fff 100%);
+		.message-icon {
+			border-radius: 50%;
+			width: 24px;
+			height: 24px;
+			background: rgba($warning-color, 0.1);
+			color: $warning-color;
+		}
+	}
+}
+@keyframes message-slide-in {
+	from {
+		opacity: 0;
+		transform: translateX(100%) scale(0.95);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0) scale(1);
+	}
+}

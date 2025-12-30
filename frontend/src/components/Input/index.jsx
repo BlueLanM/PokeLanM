@@ -1,5 +1,5 @@
 import { useState, useRef, forwardRef, useImperativeHandle } from 'react';
-import './index.css';
+import './index.scss';
 
 const Input = forwardRef((props, ref) => {
 	const {

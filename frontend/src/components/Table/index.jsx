@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import Loading from '../Loading';
-import './index.css';
+import './index.scss';
 
 const Table = ({ columns, dataSource, rowKey = 'key', loading = false, scrollY = 350 }) => {
 	const scrollRef = useRef(null);

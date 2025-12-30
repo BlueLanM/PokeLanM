@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import * as gameAPI from "../../api/game";
+import Tilt from 'react-parallax-tilt';
 import Message from "../../components/Message";
 import Button from "../../components/Button";
 import Modal from "../../components/Modal";
 import Pokedex from "../pokedex";
-import "./index.css";
+import "./index.scss";
 
 // 计算升级所需经验值（与后端保持一致）
 const getExpForNextLevel = (level) => {
@@ -595,21 +596,21 @@ const PokemonGame = () => {
 			)}
 
 			{currentView === "party" && (
-				<div className="party-view">
-					<h2>🎒 我的背包 (主战精灵)</h2>
-					<Button onClick={() => setCurrentView("home")}>返回</Button>
-					<div className="pokemon-grid">
-						{playerParty.length > 0 ? (
-							<div className="pokemon-card main-pokemon">
-								<div className="main-badge">⭐ 主战</div>
-								<img src={playerParty[0].pokemon_sprite || `https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/gif/${playerParty[0].pokemon_id}.gif`} alt={playerParty[0].pokemon_name} />
-								<h3>{playerParty[0].pokemon_name}</h3>
-								<p>等级: Lv.{playerParty[0].level}</p>
-								<p>HP: {playerParty[0].hp}/{playerParty[0].max_hp}</p>
-								<p>攻击: {playerParty[0].attack}</p>
-								<p>经验: {playerParty[0].exp || 0}/{getExpForNextLevel(playerParty[0].level)}</p>
-								{playerParty[0].level >= 100 && <p className="max-level">⭐ 满级</p>}
-							</div>
+					<div className="party-view">
+						<h2>🎒 我的背包 (主战精灵)</h2>
+						<Button onClick={() => setCurrentView("home")}>返回</Button>
+						<div className="pokemon-grid">
+							{playerParty.length > 0 ? (
+								<Tilt tiltMaxAngleX={15} tiltMaxAngleY={15} scale={1.1} transitionSpeed={400} perspective={500} className="pokemon-card main-pokemon">
+									<div className="main-badge">⭐ 主战</div>
+									<img src={playerParty[0].pokemon_sprite || `https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/gif/${playerParty[0].pokemon_id}.gif`} alt={playerParty[0].pokemon_name} />
+									<h3>{playerParty[0].pokemon_name}</h3>
+									<p>等级: Lv.{playerParty[0].level}</p>
+									<p>HP: {playerParty[0].hp}/{playerParty[0].max_hp}</p>
+									<p>攻击: {playerParty[0].attack}</p>
+									<p>经验: {playerParty[0].exp || 0}/{getExpForNextLevel(playerParty[0].level)}</p>
+									{playerParty[0].level >= 100 && <p className="max-level">⭐ 满级</p>}
+								</Tilt>
 						) : (
 							<p style={{ padding: "20px", textAlign: "center", color: "#999" }}>
 								背包为空，请先捕捉或从仓库选择一只宝可梦

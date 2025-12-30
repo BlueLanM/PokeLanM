@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import Button from "../Button";
-import './index.css';
+import './index.scss';
 
 const Modal = ({
 	visible = false,

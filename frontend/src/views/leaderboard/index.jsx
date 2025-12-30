@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getLeaderboard } from '../../api/gameAPI';
 import Table from '../../components/Table';
 import Button from '../../components/Button';
-import './index.css';
+import './index.scss';
 
 
 const Leaderboard = ({ currentPlayer }) => {

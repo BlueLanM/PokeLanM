@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import Button from '../Button';
-import './index.css';
+import './index.scss';
 
 const Popconfirm = ({
 	title = '确定要删除吗？',

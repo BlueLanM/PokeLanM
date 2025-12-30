@@ -1,0 +1,34 @@
+.app {
+	position: relative;
+	&-header {
+		display: flex;
+		position: fixed;
+		right: 20px;
+		top: 20px;
+		z-index: 1000;
+		gap: 10px;
+		button {
+			padding: 10px 20px;
+			border: none;
+			border-radius: 10px;
+			background: white;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+			cursor: pointer;
+			font-weight: bold;
+			font-size: 14px;
+			color: #667eea;
+			transition: transform 0.2s, box-shadow 0.2s;
+			&:hover {
+				box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+				transform: translateY(-2px);
+			}
+			&.logout-btn {
+				background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+				color: white;
+				&:hover {
+					box-shadow: 0 6px 16px rgba(245, 87, 108, 0.4);
+				}
+			}
+		}
+	}
+}

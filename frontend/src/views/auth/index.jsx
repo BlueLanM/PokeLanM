@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { registerPlayer, loginPlayer } from '../../api/gameAPI';
-import './index.css';
+import './index.scss';
 
 const Auth = ({ onLoginSuccess }) => {
 	const [isLogin, setIsLogin] = useState(true); // true: 登录, false: 注册

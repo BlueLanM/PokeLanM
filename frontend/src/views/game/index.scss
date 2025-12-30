@@ -317,6 +317,7 @@
 	background: white;
 	box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 	text-align: center;
+	transform-style: preserve-3d;
 	transition: transform 0.2s, box-shadow 0.2s;
 }
 .pokemon-card:hover {

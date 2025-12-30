@@ -1,0 +1,150 @@
+// 颜色变量
+$border-color: #d9d9d9;
+$primary-color: #40a9ff;
+$primary-shadow: rgba(24, 144, 255, 0.2);
+$error-color: #ff4d4f;
+$error-shadow: rgba(255, 77, 79, 0.2);
+$warning-color: #faad14;
+$warning-shadow: rgba(250, 173, 20, 0.2);
+$disabled-bg: #f5f5f5;
+$text-color-secondary: rgba(0, 0, 0, 0.45);
+$text-color-disabled: rgba(0, 0, 0, 0.25);
+.custom-input {
+	&-wrapper {
+		display: inline-flex;
+		position: relative;
+		align-items: center;
+		width: 100%;
+		line-height: 1.5715;
+		font-size: 14px;
+	}
+	&-affix-wrapper {
+		display: inline-flex;
+		position: relative;
+		align-items: center;
+		padding: 4px 11px;
+		border: 1px solid $border-color;
+		border-radius: 2px;
+		width: 100%;
+		background-color: #fff;
+		transition: all 0.3s;
+		&:hover {
+			border-color: $primary-color;
+		}
+		&:focus-within {
+			border-color: $primary-color;
+			outline: 0;
+			box-shadow: 0 0 0 2px $primary-shadow;
+		}
+	}
+	flex: 1;
+	padding: 0;
+	border: none;
+	outline: none;
+	background: transparent;
+	font-size: inherit;
+
+	// Size variants
+	&-small .custom-input-affix-wrapper {
+		padding: 0 7px;
+		font-size: 12px;
+	}
+	&-middle .custom-input-affix-wrapper {
+		padding: 4px 11px;
+		height: 25px;
+		font-size: 14px;
+	}
+	&-large .custom-input-affix-wrapper {
+		padding: 6px 11px;
+		font-size: 16px;
+	}
+
+	// Prefix & Suffix
+	&-prefix,
+	&-suffix {
+		display: flex;
+		align-items: center;
+		color: $text-color-secondary;
+	}
+	&-prefix {
+		margin-right: 4px;
+	}
+	&-suffix {
+		margin-left: 4px;
+	}
+
+	// Clear icon
+	&-clear-icon {
+		display: flex;
+		align-items: center;
+		margin-left: 4px;
+		cursor: pointer;
+		user-select: none;
+		color: $text-color-disabled;
+		transition: color 0.3s;
+		&:hover {
+			color: $text-color-secondary;
+		}
+	}
+
+	// Status variants
+	&-error .custom-input-affix-wrapper {
+		border-color: $error-color;
+		&:focus-within {
+			border-color: $error-color;
+			box-shadow: 0 0 0 2px $error-shadow;
+		}
+	}
+	&-warning .custom-input-affix-wrapper {
+		border-color: $warning-color;
+		&:focus-within {
+			border-color: $warning-color;
+			box-shadow: 0 0 0 2px $warning-shadow;
+		}
+	}
+
+	// Disabled
+	&-disabled {
+		.custom-input-affix-wrapper {
+			border-color: $border-color;
+			background-color: $disabled-bg;
+			cursor: not-allowed;
+		}
+		.custom-input {
+			cursor: not-allowed;
+			color: $text-color-disabled;
+		}
+	}
+
+	// Borderless
+	&-borderless .custom-input-affix-wrapper {
+		border: none;
+		box-shadow: none;
+	}
+
+	// Input Group
+	&-group {
+		display: inline-flex;
+		width: 100%;
+		.custom-input-affix-wrapper {
+			border-radius: 0;
+		}
+	}
+	&-addon-before,
+	&-addon-after {
+		display: flex;
+		align-items: center;
+		padding: 0 11px;
+		border: 1px solid $border-color;
+		background-color: #fafafa;
+		white-space: nowrap;
+	}
+	&-addon-before {
+		border-right: none;
+		border-radius: 2px 0 0 2px;
+	}
+	&-addon-after {
+		border-left: none;
+		border-radius: 0 2px 2px 0;
+	}
+}

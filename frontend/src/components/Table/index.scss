@@ -1,0 +1,91 @@
+// 颜色变量
+$border-color: #f0f0f0;
+$header-bg: #fafafa;
+$hover-bg: #fafafa;
+$scrollbar-color: #d9d9d9;
+.table {
+	&-wrapper {
+		position: relative;
+		min-height: 300px;
+	}
+	table {
+		table-layout: fixed;
+		border-collapse: collapse;
+		width: 100%;
+	}
+
+	// 固定表头
+	&-header {
+		display: table;
+		width: 100%;
+	}
+
+	// 可滚动的 tbody 容器
+	&-body {
+		display: block;
+		overflow-x: hidden;
+		overflow-y: auto;
+		table {
+			display: table;
+			width: 100%;
+		}
+		&::-webkit-scrollbar {
+			width: 8px;
+		}
+		&::-webkit-scrollbar-thumb {
+			border-radius: 4px;
+			background: $scrollbar-color;
+		}
+	}
+	th,
+	td {
+		overflow: hidden;
+		padding: 16px;
+		border-bottom: 1px solid $border-color;
+		text-overflow: ellipsis;
+		text-align: left;
+		white-space: nowrap;
+	}
+	th {
+		background-color: $header-bg;
+		font-weight: 600;
+	}
+	tbody tr:hover {
+		background-color: $hover-bg;
+	}
+	&-loading-overlay {
+		display: flex;
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		z-index: 10;
+		justify-content: center;
+		align-items: center;
+		background-color: rgba(255, 255, 255, 0.9);
+	}
+}
+.fixed {
+	&-left,
+	&-right {
+		position: relative;
+		z-index: 2;
+		background: white;
+	}
+	&-left.shadow {
+		box-shadow: 6px 0 6px -4px rgba(0, 0, 0, 0.1);
+	}
+}
+.scroll-container {
+	overflow-x: auto;
+	overflow-y: hidden;
+	flex: 1;
+	&::-webkit-scrollbar {
+		height: 8px;
+	}
+	&::-webkit-scrollbar-thumb {
+		border-radius: 4px;
+		background: $scrollbar-color;
+	}
+}
