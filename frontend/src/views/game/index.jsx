@@ -585,27 +585,39 @@ const PokemonGame = () => {
 					{badges.length > 0 ? (
 						<div className="badges-list">
 							{badges.map((badge) => (
-								<div key={badge.id} className="badge-item">
+								<Tilt  
+									tiltMaxAngleX={15}
+									iltMaxAngleY={15} 
+									transitionSpeed={400} 
+									perspective={600}
+									glareEnable={true} 
+									glareMaxOpacity={0.9} 
+									glareColor="white" 
+									glarePosition="all" 
+									glareBorderRadius="12px"
+									key={badge.id} 
+									className="badge-item"
+								>
 									{badge.badge_image ? (
 										<img 
 											src={badge.badge_image} 
 											alt={badge.badge_name}
-											className="badge-icon"
+											className="badge-item-icon"
 											style={{ 
 												width: "60px", 
 												height: "60px", 
-												objectFit: "contain"
+												
 											}}
 										/>
 									) : (
-										<span className="badge-icon">🏅</span>
+										<span className="badge-item-icon">🏅</span>
 									)}
 									<div className="badge-info">
 										<strong>{badge.badge_name}</strong>
 										<p className="badge-gym">{badge.gym_name}</p>
 										<p className="badge-date">{new Date(badge.earned_at).toLocaleDateString('zh-CN')}</p>
 									</div>
-								</div>
+								</Tilt>
 							))}
 						</div>
 					) : (
@@ -692,16 +704,26 @@ const PokemonGame = () => {
 							const hasBadge = badges.some(badge => badge.gym_id === gym.id);
 							
 							return (
-								<div key={gym.id} className={`gym-card ${hasBadge ? 'gym-completed' : ''}`}>
+								<Tilt
+									tiltMaxAngleX={0} 
+									tiltMaxAngleY={0} 
+									transitionSpeed={400} 
+									perspective={500}
+									key={gym.id} 
+									className={`gym-card ${hasBadge ? 'gym-completed' : ''}`}
+								>
 									{hasBadge && <div className="gym-completed-badge">✅ 已完成</div>}
 									<h3>{gym.name}</h3>
 									<p>馆主: {gym.leader_name}</p>
-									<img src={gym.pokemon_sprite || `https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/gif/${gym.pokemon_id}.gif`} alt={gym.pokemon_name} />
+									<img className="gym-pokemon" src={gym.pokemon_sprite || `https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/gif/${gym.pokemon_id}.gif`} alt={gym.pokemon_name} />
 									<p>宝可梦: {gym.pokemon_name}</p>
 									<p>奖励: {gym.reward_money} 金币</p>
-									<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', margin: '10px 0' }}>
+									<div 
+										className="gym-badge"
+									>
 										{gym.badge_image && (
 											<img 
+												className="gym-badge-img"
 												src={gym.badge_image} 
 												alt={gym.badge_name}
 												style={{ 
@@ -716,7 +738,7 @@ const PokemonGame = () => {
 									<Button onClick={() => handleChallengeGym(gym)}>
 										{hasBadge ? '再次挑战' : '挑战'}
 									</Button>
-								</div>
+								</Tilt>
 							);
 						})}
 					</div>

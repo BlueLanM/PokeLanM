@@ -849,11 +849,11 @@ export const getPokeballType = async(id) => {
 // 添加新道馆
 export const addGym = async(gymData) => {
 	try {
-		const { name, leader_name, pokemon_id, pokemon_name, pokemon_sprite, level, hp, max_hp, attack, reward_money, badge_name } = gymData;
+		const { name, leader_name, pokemon_id, pokemon_name, pokemon_sprite, level, hp, max_hp, attack, reward_money, badge_name, badge_image } = gymData;
 		const [result] = await pool.query(
-			`INSERT INTO gyms (name, leader_name, pokemon_id, pokemon_name, pokemon_sprite, level, hp, max_hp, attack, reward_money, badge_name)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			[name, leader_name, pokemon_id, pokemon_name, pokemon_sprite, level, hp, max_hp, attack, reward_money, badge_name]
+			`INSERT INTO gyms (name, leader_name, pokemon_id, pokemon_name, pokemon_sprite, level, hp, max_hp, attack, reward_money, badge_name, badge_image)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			[name, leader_name, pokemon_id, pokemon_name, pokemon_sprite, level, hp, max_hp, attack, reward_money, badge_name, badge_image]
 		);
 		return { id: result.insertId, success: true };
 	} catch (error) {
@@ -864,12 +864,12 @@ export const addGym = async(gymData) => {
 // 更新道馆
 export const updateGym = async(id, gymData) => {
 	try {
-		const { name, leader_name, pokemon_id, pokemon_name, pokemon_sprite, level, hp, max_hp, attack, reward_money, badge_name } = gymData;
+		const { name, leader_name, pokemon_id, pokemon_name, pokemon_sprite, level, hp, max_hp, attack, reward_money, badge_name, badge_image } = gymData;
 		await pool.query(
 			`UPDATE gyms SET name = ?, leader_name = ?, pokemon_id = ?, pokemon_name = ?, pokemon_sprite = ?, 
-			 level = ?, hp = ?, max_hp = ?, attack = ?, reward_money = ?, badge_name = ?
+			 level = ?, hp = ?, max_hp = ?, attack = ?, reward_money = ?, badge_name = ?, badge_image = ?
 			 WHERE id = ?`,
-			[name, leader_name, pokemon_id, pokemon_name, pokemon_sprite, level, hp, max_hp, attack, reward_money, badge_name, id]
+			[name, leader_name, pokemon_id, pokemon_name, pokemon_sprite, level, hp, max_hp, attack, reward_money, badge_name, badge_image, id]
 		);
 		return { success: true };
 	} catch (error) {

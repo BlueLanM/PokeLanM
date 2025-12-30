@@ -63,7 +63,8 @@ const Pokemon = () => {
 		max_hp: 100,
 		attack: 25,
 		reward_money: 500,
-		badge_name: ''
+		badge_name: '',
+		badge_image: ''
 	});
 
 	const { values, handleChange, reset, setValues } = useForm({
@@ -350,7 +351,8 @@ const Pokemon = () => {
 			max_hp: 100,
 			attack: 25,
 			reward_money: 500,
-			badge_name: ''
+			badge_name: '',
+			badge_image: ''
 		});
 		setGymModalMode('add');
 		setGymModalVisible(true);
@@ -368,7 +370,8 @@ const Pokemon = () => {
 			max_hp: gym.max_hp,
 			attack: gym.attack,
 			reward_money: gym.reward_money,
-			badge_name: gym.badge_name
+			badge_name: gym.badge_name,
+			badge_image: gym.badge_image || ''
 		});
 		setCurrentGym(gym);
 		setGymModalMode('edit');
@@ -809,6 +812,20 @@ const Pokemon = () => {
 							{
 								title: '徽章',
 								dataIndex: 'badge_name',
+								render: (text, record) => (
+									<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+										{record.badge_image ? (
+											<img 
+												src={record.badge_image} 
+												alt={text} 
+												style={{ width: '32px', height: '32px', objectFit: 'contain' }}
+											/>
+										) : (
+											<span>🏅</span>
+										)}
+										<span>{text}</span>
+									</div>
+								)
 							},
 							{
 								title: "操作",
@@ -930,6 +947,29 @@ const Pokemon = () => {
 										onChange={(e) => setGymFormData({...gymFormData, badge_name: e.target.value})}
 									/>
 							</div>
+							<div className="pokemon-flex">
+								徽章图片：<Input 
+										placeholder="例如: https://raw.githubusercontent.com/BlueLanM/pokemon-nodejs/main/images/Boulder_Badge.png" 
+										width={420}
+										value={gymFormData.badge_image}
+										onChange={(e) => setGymFormData({...gymFormData, badge_image: e.target.value})}
+									/>
+							</div>
+							{gymFormData.badge_image && (
+								<div className="pokemon-flex" style={{ alignItems: 'center' }}>
+									<span style={{ width: '100px' }}>图片预览：</span>
+									<img 
+										src={gymFormData.badge_image} 
+										alt="徽章预览" 
+										style={{ width: '60px', height: '60px', objectFit: 'contain' }}
+										onError={(e) => {
+											e.target.style.display = 'none';
+											e.target.nextSibling.style.display = 'inline';
+										}}
+									/>
+									<span style={{ display: 'none', color: '#999' }}>图片加载失败</span>
+								</div>
+							)}
 						</div>
 					</Modal>
 				</>

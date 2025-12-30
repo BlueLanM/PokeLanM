@@ -500,38 +500,35 @@ $border-radius-lg: 20px;
 	gap: 25px;
 }
 .gym-card {
-	overflow: hidden;
+	// overflow: hidden;
 	position: relative;
-	padding: 30px;
+	padding: 10px;
 	border: 3px solid transparent;
 	border-radius: 20px;
 	min-width: 280px;
 	background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
 	box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 	text-align: center;
+	transform-style: preserve-3d;
 	transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-	
-	// 装饰性边框效果
-	&::before {
-		position: absolute;
-		left: 0;
-		right: 0;
-		top: 0;
-		height: 5px;
-		background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-		content: '';
-		transition: height 0.3s;
+
+	// 徽章图片的初始状态和过渡效果
+	.gym-badge-img {
+		transform: translateZ(0) translateX(0) translateY(0) scale(1) rotate(0deg);
+		transform-origin: right left top; /* 设置旋转中心点 */
+		transition: all 1s ease; /* 关键:在初始状态就设置过渡效果 */
 	}
 	&:hover {
 		border-color: rgba(102, 126, 234, 0.3);
 		box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2), 0 0 30px rgba(102, 126, 234, 0.2);
-		transform: translateY(-10px) scale(1.02);
 		&::before {
 			height: 8px;
 		}
-		img {
-			filter: drop-shadow(0 10px 20px rgba(102, 126, 234, 0.4));
-			transform: scale(1.1) rotate(5deg);
+		
+		// hover时的变换效果
+		.gym-badge-img {
+			filter: drop-shadow(0 1px 5px rgba(0, 0, 0, 1));
+			transform: translateZ(80px) translateX(60px) translateY(-180px) scale(3) rotateY(360deg);
 		}
 	}
 	h3 {
@@ -542,14 +539,14 @@ $border-radius-lg: 20px;
 		color: #667eea;
 		letter-spacing: 0.5px;
 	}
+	.gym-pokemon{
+		image-rendering: pixelated;
+	}
 	img {
 		margin: 20px 0;
 		width: 160px;
 		height: 160px;
-		image-rendering: pixelated;
 		filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.2));
-		transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-		animation: gymFloat 3s ease-in-out infinite;
 	}
 	p {
 		margin: 8px 0;
@@ -568,9 +565,6 @@ $border-radius-lg: 20px;
 		position: relative;
 		border-color: #4CAF50;
 		background: linear-gradient(135deg, #f0fff4 0%, #fff 100%);
-		&::before {
-			background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);
-		}
 		&::after {
 			display: flex;
 			position: absolute;
@@ -590,6 +584,13 @@ $border-radius-lg: 20px;
 			content: '✓';
 		}
 	}
+}
+.gym-badge{
+	display: flex; 
+	justify-content: center; 
+	align-items: center; 
+	margin: 10px 0; 
+	gap: 10px;
 }
 @keyframes gymFloat {
 	0%, 100% {
@@ -795,45 +796,183 @@ $border-radius-lg: 20px;
 }
 .badge-item {
 	display: flex;
+	position: relative;
 	align-items: center;
-	padding: 15px;
-	border: 2px solid #ffd700;
+	padding: 15px 20px;
+	border: 2px solid transparent;
 	border-radius: 12px;
-	background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-	box-shadow: 0 4px 10px rgba(255, 215, 0, 0.2);
-	transition: all 0.3s ease;
+	// 移除 overflow: hidden 以保持 3D 效果
+	
+	// 金属渐变背景 - 银灰色到深灰色
+	background: 
+		linear-gradient(145deg, #e8e8e8 0%, #b8b8b8 20%, #888 40%, #666 60%, #888 80%, #b8b8b8 100%);
+	
+	// 多层阴影创造深度和金属质感
+	box-shadow: 
+		0 1px 0 rgba(255, 255, 255, 0.8) inset,           // 顶部高光
+		0 -1px 0 rgba(0, 0, 0, 0.3) inset,                // 底部阴影
+		0 8px 20px rgba(0, 0, 0, 0.4),                    // 外部阴影
+		0 2px 4px rgba(0, 0, 0, 0.3);                     // 近距离阴影
+	cursor: pointer;
+	transform-style: preserve-3d;
+	transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 	gap: 15px;
+	
+	// 金属边框 - 使用 clip-path 限制范围
+	&::before {
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		z-index: 0;
+		border-radius: 12px;
+		background: linear-gradient(135deg, 
+		rgba(255, 255, 255, 0.9) 0%, 
+		rgba(255, 255, 255, 0.3) 25%,
+		rgba(100, 100, 100, 0.3) 50%,
+		rgba(255, 255, 255, 0.3) 75%,
+		rgba(255, 255, 255, 0.9) 100%
+	);
+		opacity: 0.7;
+		clip-path: inset(0 0 0 0 round 12px); // 限制在圆角矩形内
+		pointer-events: none;
+		content: '';
+	}
+	
+	// 动态光泽效果 - 使用 clip-path 限制范围,防止溢出
+	&::after {
+		position: absolute;
+		left: 0;
+		top: 0;
+		z-index: 1;
+		width: 30%;
+		height: 100%;
+		background: linear-gradient(
+			90deg,
+			transparent 0%,
+			rgba(255, 255, 255, 0.4) 50%,
+			transparent 100%
+		);
+		clip-path: inset(0 0 0 0 round 12px); // 关键:限制光泽在卡片内
+		pointer-events: none;
+		content: '';
+		transform: skewX(-25deg);
+		transition: left 0.6s ease;
+	}
+	.badge-item-icon {
+		position: relative;
+		z-index: 3;
+		filter: 
+			drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5))
+			drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));
+		transition: all 0.4s ease;
+	}
 	&:hover {
-		box-shadow: 0 6px 15px rgba(255, 215, 0, 0.3);
-		transform: translateY(-2px);
+		// 增强金属光泽
+		background: 
+			linear-gradient(145deg, #f5f5f5 0%, #d0d0d0 20%, #a0a0a0 40%, #808080 60%, #a0a0a0 80%, #d0d0d0 100%);
+		box-shadow: 
+			0 2px 0 rgba(255, 255, 255, 1) inset,           // 更强的顶部高光
+			0 -2px 0 rgba(0, 0, 0, 0.4) inset,              // 更强的底部阴影
+			0 15px 40px rgba(0, 0, 0, 0.5),                 // 悬浮效果
+			0 0 30px rgba(255, 215, 0, 0.3),                // 金色光晕
+			0 4px 8px rgba(0, 0, 0, 0.4);
+		// transform: translateY(-4px) scale(1.03);
+		&::before {
+			opacity: 1;
+			animation: metalShine 2s linear infinite;
+		}
+		
+		// 触发光泽扫过效果
+		&::after {
+			left: 80%;
+		}
+		.badge-item-icon {
+			filter: 
+				drop-shadow(0 8px 16px rgba(0, 0, 0, 0.6))
+				drop-shadow(0 0 20px rgba(153, 152, 149, 0.6))
+				drop-shadow(0 0 30px rgba(255, 255, 255, 0.4));
+			transform: translateX(50px) translateZ(80px) rotateY(15deg);
+		}
+	}
+	
+	// 激活效果
+	&:active {
+		box-shadow: 
+			0 1px 0 rgba(255, 255, 255, 0.8) inset,
+			0 -1px 0 rgba(0, 0, 0, 0.3) inset,
+			0 4px 10px rgba(0, 0, 0, 0.4);
+		transform: translateY(-2px) scale(1.01);
 	}
 }
-.badge-icon {
-	filter: drop-shadow(0 2px 4px rgba(255, 215, 0, 0.5));
+
+// 金属光泽动画
+@keyframes metalShine {
+	0% {
+		background: linear-gradient(135deg, 
+		rgba(255, 255, 255, 0.9) 0%, 
+		rgba(255, 255, 255, 0.3) 25%,
+		rgba(100, 100, 100, 0.3) 50%,
+		rgba(255, 255, 255, 0.3) 75%,
+		rgba(255, 255, 255, 0.9) 100%
+	);
+	}
+	50% {
+		background: linear-gradient(135deg, 
+		rgba(100, 100, 100, 0.3) 0%, 
+		rgba(255, 255, 255, 0.9) 25%,
+		rgba(255, 255, 255, 0.3) 50%,
+		rgba(100, 100, 100, 0.3) 75%,
+		rgba(255, 255, 255, 0.9) 100%
+	);
+	}
+	100% {
+		background: linear-gradient(135deg, 
+		rgba(255, 255, 255, 0.9) 0%, 
+		rgba(255, 255, 255, 0.3) 25%,
+		rgba(100, 100, 100, 0.3) 50%,
+		rgba(255, 255, 255, 0.3) 75%,
+		rgba(255, 255, 255, 0.9) 100%
+	);
+	}
+}
+.badge-item-icon {
+	filter: 
+		drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5))
+		drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));
 	font-size: 2.5em;
-	transform: none !important;
-	animation: none !important;
 }
 .badge-info {
+	position: relative;
+	z-index: 2;
 	flex: 1;
 	text-align: left;
 	strong {
 		display: block;
 		margin-bottom: 4px;
+		text-shadow: 
+			0 1px 0 rgba(255, 255, 255, 0.8),
+			0 2px 4px rgba(0, 0, 0, 0.3);
+		font-weight: 800;
 		font-size: 1.2em;
-		color: #667eea;
+		color: #1a1a1a;
+		letter-spacing: 0.5px;
 	}
 }
 .badge-gym {
 	margin: 0;
+	text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+	font-weight: 600;
 	font-size: 0.95em;
-	color: #666;
+	color: #333;
 }
 .badge-date {
 	margin: 0;
+	text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
 	font-style: italic;
 	font-size: 0.85em;
-	color: #999;
+	color: #555;
 }
 /* 响应式设计 */
 @media (max-width: 768px) {
