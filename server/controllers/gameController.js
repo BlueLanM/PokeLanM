@@ -130,17 +130,34 @@ export const explore = async(req, res) => {
 			return res.status(500).json({ error: "宝可梦数据未加载" });
 		}
 
+		const { playerLevel } = req.body; // 接收玩家宝可梦等级
+
 		// 随机选择一只宝可梦（全部世代）
 		const randomIndex = Math.floor(Math.random() * pokemonData.length);
 		const pokemonInfo = pokemonData[randomIndex];
 
+		// 根据玩家等级动态调整野生宝可梦等级和属性
+		const basePlayerLevel = playerLevel || 5;
+		const wildLevel = Math.max(1, Math.floor(basePlayerLevel + Math.random() * 6 - 3)); // 玩家等级 ±3 级
+
+		// 基于等级计算血量和攻击力
+		// HP = 基础值 + 等级加成
+		const baseHp = 30;
+		const hpPerLevel = 5; // 每级增加5点HP
+		const maxHp = baseHp + (wildLevel * hpPerLevel) + Math.floor(Math.random() * 20); // 加一些随机性
+
+		// 攻击力也根据等级调整
+		const baseAttack = 5;
+		const attackPerLevel = 2; // 每级增加2点攻击
+		const attack = baseAttack + (wildLevel * attackPerLevel) + Math.floor(Math.random() * 5);
+
 		const pokemon = {
-			attack: Math.floor(Math.random() * 15) + 5,
+			attack,
 			catchRate: pokemonInfo.catchRate || "5.9%",
-			hp: Math.floor(Math.random() * 30) + 30,
+			hp: maxHp,
 			id: pokemonInfo.id,
-			level: Math.floor(Math.random() * 10) + 1,
-			max_hp: Math.floor(Math.random() * 30) + 30,
+			level: wildLevel,
+			max_hp: maxHp,
 			name: pokemonInfo.name,
 			name_en: pokemonInfo.name_en,
 			sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/${pokemonInfo.id}.gif`,
@@ -149,10 +166,8 @@ export const explore = async(req, res) => {
 			type2: pokemonInfo.type2
 		};
 
-		pokemon.max_hp = pokemon.hp;
-
 		res.json({
-			message: `遇到了野生的 ${pokemon.name}！`,
+			message: `遇到了野生的 ${pokemon.name}！(Lv.${wildLevel})`,
 			pokemon,
 			success: true
 		});
@@ -306,15 +321,28 @@ export const catchPokemon = async(req, res) => {
 // 战斗 - 攻击
 export const attack = async(req, res) => {
 	try {
-		const { playerPokemon, enemyPokemon, isGym } = req.body;
+		const { playerPokemon, enemyPokemon, isGym, attackType } = req.body;
 
 		// 玩家宝可梦攻击
-		const playerDamage = Math.floor(Math.random() * playerPokemon.attack) + 5;
+		let playerDamage = 0;
+		let attackName = "攻击";
+
+		// 根据攻击类型计算伤害
+		if (attackType === "fixed") {
+			// 固定伤害攻击 - 固定10点伤害
+			playerDamage = 10;
+			attackName = "固定伤害攻击";
+		} else {
+			// 随机攻击 - 0到最大攻击力之间随机
+			playerDamage = Math.floor(Math.random() * (playerPokemon.attack + 1)); // 0 到 attack
+			attackName = "随机攻击";
+		}
+
 		enemyPokemon.hp -= playerDamage;
 
 		const playerName = playerPokemon.pokemon_name || playerPokemon.name;
 		const enemyName = enemyPokemon.pokemon_name || enemyPokemon.name;
-		const battleLog = [`你的 ${playerName} 造成了 ${playerDamage} 点伤害！`];
+		const battleLog = [`你的 ${playerName} 使用了【${attackName}】，造成了 ${playerDamage} 点伤害！`];
 
 		if (enemyPokemon.hp <= 0) {
 			enemyPokemon.hp = 0;

@@ -10,8 +10,8 @@ export const getPlayerInfo = (playerId) => {
 };
 
 // 探索模块
-export const explore = () => {
-  return request.get("/game/explore");
+export const explore = (playerLevel) => {
+  return request.post("/game/explore", { playerLevel });
 };
 
 export const selectStarter = (playerId, pokemon) => {
@@ -23,8 +23,8 @@ export const catchPokemon = (playerId, pokemon, pokeballTypeId, playerPokemonId)
 };
 
 // 战斗模块
-export const attack = (playerPokemon, enemyPokemon, isGym = false) => {
-  return request.post("/game/attack", { playerPokemon, enemyPokemon, isGym });
+export const attack = (playerPokemon, enemyPokemon, isGym = false, attackType = "random") => {
+  return request.post("/game/attack", { playerPokemon, enemyPokemon, isGym, attackType });
 };
 
 // 道馆模块

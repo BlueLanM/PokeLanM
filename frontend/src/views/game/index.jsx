@@ -74,7 +74,9 @@ const PokemonGame = () => {
 	const handleExplore = async () => {
 		setLoading(true);
 		try {
-			const data = await gameAPI.explore();
+			// 传递玩家宝可梦等级
+			const playerLevel = playerParty.length > 0 ? playerParty[0].level : 5;
+			const data = await gameAPI.explore(playerLevel);
 			setWildPokemon(data.pokemon);
 			setInBattle(true);
 			setCatchAttempts(0); // 重置捕捉次数
@@ -167,12 +169,13 @@ const PokemonGame = () => {
 	};
 
 	// 攻击
-	const handleAttack = async (isGym = false) => {
+	const handleAttack = async (isGym = false, attackType = "random") => {
 		try {
 			const data = await gameAPI.attack(
 				selectedPokemon,
 				isGym ? currentGym : wildPokemon,
-				isGym
+				isGym,
+				attackType
 			);
 
 			setBattleLog([...battleLog, ...data.battleLog]);
@@ -439,12 +442,15 @@ const PokemonGame = () => {
 
 					<div className="battle-actions">
 						{hasPlayerPokemon && (
-							<Button onClick={() => handleAttack(isGym)}>⚔️ 攻击</Button>
+							<>
+								<Button onClick={() => handleAttack(isGym, "random")}>⚔️ 随机攻击</Button>
+								<Button onClick={() => handleAttack(isGym, "fixed")}>🎯 固定伤害</Button>
+							</>
 						)}
 						{!isGym && (
 							<Button onClick={() => {
 								setShowModal(true);
-							}}>🎯 捕捉</Button>
+							}}>� 捕捉</Button>
 						)}
 						<Button onClick={handleRun}>🏃 {hasPlayerPokemon ? '逃跑' : '离开'}</Button>
 					</div>
