@@ -11,9 +11,19 @@ export default defineConfig({
 	},
 	plugins: [
 		react({
-			jsxRuntime: "automatic" // 使用自动 JSX 运行时，不需要手动导入 React
+			jsxRuntime: "automatic" // 使用自动 JSX 运行时,不需要手动导入 React
 		})
 	],
+	
+	// CSS 预处理器配置
+	css: {
+		preprocessorOptions: {
+			scss: {
+				api: 'modern-compiler', // 使用现代编译器 API
+				silenceDeprecations: ['legacy-js-api'] // 静默旧版 API 警告
+			}
+		}
+	},
 	
 	// 构建配置
 	build: {

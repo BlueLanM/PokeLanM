@@ -170,9 +170,9 @@ const Leaderboard = ({ currentPlayer }) => {
 			</div>
 
 			<div className="refresh-section">
-				<button onClick={loadLeaderboard} className="refresh-btn">
+				<Button onClick={loadLeaderboard} className="refresh-btn">
 					🔄 刷新排行榜
-				</button>
+				</Button>
 			</div>
 		</div>
 	);

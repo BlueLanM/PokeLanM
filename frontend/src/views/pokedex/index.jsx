@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getPokedex, getSpecialBadges } from '../../api/gameAPI';
+import Tilt from 'react-parallax-tilt';
 import './index.scss';
 
 const Pokedex = ({ playerId }) => {
@@ -129,7 +130,14 @@ const Pokedex = ({ playerId }) => {
 					</div>
 				) : (
 					pokedex.map((entry) => (
-						<div key={entry.id} className="pokedex-card">
+						<Tilt 
+							tiltMaxAngleX={15} 
+							tiltMaxAngleY={15} 
+							transitionSpeed={400} 
+							perspective={500} 
+							key={entry.id} 
+							className="pokedex-card"
+						>
 							<div className="pokemon-number">#{String(entry.pokemon_id).padStart(4, '0')}</div>
 							<img
 								src={entry.pokemon_sprite}
@@ -147,7 +155,7 @@ const Pokedex = ({ playerId }) => {
 									首次: {new Date(entry.first_caught_at).toLocaleDateString()}
 								</div>
 							</div>
-						</div>
+						</Tilt>
 					))
 				)}
 			</div>

@@ -601,7 +601,7 @@ const PokemonGame = () => {
 						<Button onClick={() => setCurrentView("home")}>返回</Button>
 						<div className="pokemon-grid">
 							{playerParty.length > 0 ? (
-								<Tilt tiltMaxAngleX={15} tiltMaxAngleY={15} scale={1.1} transitionSpeed={400} perspective={500} className="pokemon-card main-pokemon">
+								<Tilt tiltMaxAngleX={15} tiltMaxAngleY={15} scale={1} transitionSpeed={400} perspective={600} className="pokemon-card main-pokemon">
 									<div className="main-badge">⭐ 主战</div>
 									<img src={playerParty[0].pokemon_sprite || `https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/gif/${playerParty[0].pokemon_id}.gif`} alt={playerParty[0].pokemon_name} />
 									<h3>{playerParty[0].pokemon_name}</h3>
@@ -630,7 +630,14 @@ const PokemonGame = () => {
 								// 仓库使用正常图片
 								const normalSprite = pokemon.pokemon_sprite || `https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/detail/${pokemon.pokemon_id}.png`;
 								return (
-									<div key={pokemon.id} className="pokemon-card">
+									<Tilt 
+										tiltMaxAngleX={15} 
+										tiltMaxAngleY={15} 
+										transitionSpeed={400} 
+										perspective={500} 
+										key={pokemon.id} 
+										className="pokemon-card"
+									>
 										<img src={normalSprite} alt={pokemon.pokemon_name} />
 										<h3>{pokemon.pokemon_name}</h3>
 										<p>HP: {pokemon.hp}/{pokemon.max_hp}</p>
@@ -641,7 +648,7 @@ const PokemonGame = () => {
 										>
 											设为主战
 										</Button>
-									</div>
+									</Tilt>
 								);
 							})}
 						</div>

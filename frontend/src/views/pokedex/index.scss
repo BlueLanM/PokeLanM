@@ -1,36 +1,99 @@
+// 变量定义
+$primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+$secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+$green-gradient: linear-gradient(90deg, #4CAF50 0%, #8BC34A 50%, #CDDC39 100%);
+
+$primary-color: #667eea;
+$secondary-color: #764ba2;
+$text-dark: #2c3e50;
+$text-gray: #7f8c8d;
+$text-light-gray: #95a5a6;
+$text-lighter-gray: #bdc3c7;
+$success-color: #27ae60;
+$green-color: #4CAF50;
+$error-color: #e74c3c;
+$error-color-dark: #c0392b;
+
+$shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+$shadow-md: 0 4px 10px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 4px 15px rgba(0, 0, 0, 0.1);
+$shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.15);
+$shadow-primary: 0 4px 15px rgba(102, 126, 234, 0.4);
+$shadow-primary-hover: 0 6px 20px rgba(102, 126, 234, 0.6);
+$shadow-green: 0 2px 8px rgba(76, 175, 80, 0.4);
+
+$border-radius: 15px;
+$border-radius-sm: 10px;
+$border-radius-md: 20px;
+$border-radius-lg: 25px;
+
+$min-width: 1000px;
+$breakpoint-mobile: 768px;
+
+// Mixins
+@mixin card-base {
+	padding: 15px;
+	border-radius: $border-radius;
+	background: white;
+	box-shadow: $shadow-md;
+	transition: all 0.3s ease;
+}
+@mixin hover-lift($translateY: -5px) {
+	transition: transform 0.3s ease;
+	&:hover {
+		transform: translateY($translateY);
+	}
+}
+@mixin gradient-card($gradient) {
+	padding: 20px;
+	border-radius: $border-radius;
+	background: $gradient;
+	box-shadow: $shadow-lg;
+}
+@mixin button-base {
+	border: none;
+	border-radius: $border-radius-lg;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	&:hover {
+		transform: translateY(-2px);
+	}
+	&:active {
+		transform: translateY(0);
+	}
+}
+
+// 主容器
 .pokedex-container {
 	margin: 0 auto;
 	padding: 20px;
-	max-width: 1400px;
+	min-width: $min-width;
 }
+
+// 头部
 .pokedex-header {
 	margin-bottom: 30px;
+	h1 {
+		margin-bottom: 30px;
+		text-align: center;
+		text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+		font-size: 2.5em;
+		color: $text-dark;
+	}
 }
-.pokedex-header h1 {
-	margin-bottom: 30px;
-	text-align: center;
-	text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-	font-size: 2.5em;
-	color: #2c3e50;
-}
-/* 统计面板 */
+// 统计面板
 .stats-panel {
 	display: flex;
 	gap: 20px;
+	justify-content: center;
 	margin-bottom: 20px;
 }
 .stat-card {
+	@include gradient-card($primary-gradient);
+	@include hover-lift;
 	display: flex;
 	align-items: center;
-	padding: 20px;
-	border-radius: 15px;
-	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-	box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-	transition: transform 0.3s ease;
 	gap: 15px;
-}
-.stat-card:hover {
-	transform: translateY(-5px);
 }
 .stat-icon {
 	filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.2));
@@ -49,11 +112,11 @@
 	font-size: 1.8em;
 	color: white;
 }
-/* 进度条 */
+// 进度条
 .progress-bar {
 	overflow: hidden;
 	margin-bottom: 30px;
-	border-radius: 15px;
+	border-radius: $border-radius;
 	width: 100%;
 	height: 30px;
 	background: #e0e0e0;
@@ -65,25 +128,22 @@
 	align-items: center;
 	padding-right: 10px;
 	height: 100%;
-	background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 50%, #CDDC39 100%);
-	box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+	background: $green-gradient;
+	box-shadow: $shadow-green;
 	font-weight: bold;
 	color: white;
 	transition: width 0.5s ease;
 }
-/* 特殊徽章区域 */
+// 特殊徽章区域
 .special-badges {
+	@include gradient-card($secondary-gradient);
 	margin-bottom: 30px;
-	padding: 20px;
-	border-radius: 15px;
-	background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-	box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-.special-badges h3 {
-	margin-bottom: 15px;
-	text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-	font-size: 1.5em;
-	color: white;
+	h3 {
+		margin-bottom: 15px;
+		text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+		font-size: 1.5em;
+		color: white;
+	}
 }
 .badges-list {
 	display: flex;
@@ -94,14 +154,14 @@
 	display: flex;
 	align-items: center;
 	padding: 15px 20px;
-	border-radius: 10px;
+	border-radius: $border-radius-sm;
 	background: rgba(255, 255, 255, 0.95);
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+	box-shadow: $shadow-sm;
 	transition: transform 0.3s ease;
 	gap: 10px;
-}
-.special-badge:hover {
-	transform: scale(1.05);
+	&:hover {
+		transform: scale(1.05);
+	}
 }
 .badge-icon {
 	font-size: 2em;
@@ -114,139 +174,215 @@
 .badge-name {
 	font-weight: bold;
 	font-size: 1.1em;
-	color: #2c3e50;
+	color: $text-dark;
 }
 .badge-date {
 	margin-left: auto;
 	font-size: 0.85em;
-	color: #7f8c8d;
+	color: $text-gray;
 }
-/* 图鉴网格 */
+// 图鉴网格
 .pokedex-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-	gap: 20px;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 25px;
 	margin-bottom: 30px;
 }
 .pokedex-card {
-	padding: 15px;
+	display: flex;
+	// overflow: hidden;
+	position: relative;
+	flex-direction: column;
+	justify-content: space-between;
 	border: 2px solid transparent;
-	border-radius: 15px;
-	background: white;
-	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+	background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
 	cursor: pointer;
-	transition: all 0.3s ease;
-}
-.pokedex-card:hover {
-	border-color: #667eea;
-	box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-	transform: translateY(-10px) scale(1.02);
+	transform-style: preserve-3d;
+	transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+	@include card-base;
+	
+	// 添加闪光效果背景
+	&::before {
+		position: absolute;
+		left: -50%;
+		top: -50%;
+		width: 200%;
+		height: 200%;
+		background: linear-gradient(
+			45deg,
+			transparent 30%,
+			rgba(255, 255, 255, 0.1) 50%,
+			transparent 70%
+		);
+		pointer-events: none;
+		content: '';
+		transform: rotate(45deg);
+		transition: all 0.5s;
+	}
+	&:hover {
+		border-color: $primary-color;
+		background: linear-gradient(135deg, #fff 0%, #e8eaf6 100%);
+		box-shadow: $shadow-hover, 0 0 20px rgba(102, 126, 234, 0.3);
+		// transform: translateY(-12px) scale(1.03);
+		&::before {
+			left: 100%;
+		}
+		img {
+			filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.35)); // 增强阴影
+			
+		}
+		.pokemon-sprite {
+			filter: drop-shadow(0 8px 16px rgba(102, 126, 234, 0.4));
+			transform: translateZ(80px); // 3D 弹出
+		}
+		.pokemon-number {
+			color: $primary-color;
+			transform: scale(1.1);
+		}
+	}
 }
 .pokemon-number {
-	margin-bottom: 5px;
+	display: inline-block;
+	position: relative;
+	margin-bottom: 8px;
+	padding: 4px 12px;
+	border-radius: 15px;
+	background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 	text-align: center;
 	font-weight: bold;
-	font-size: 0.8em;
-	color: #95a5a6;
+	font-size: 0.85em;
+	color: $text-light-gray;
+	transition: all 0.3s ease;
 }
 .pokemon-sprite {
 	display: block;
-	margin: 0 auto;
-	width: 120px;
-	height: 120px;
-	filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+	position: relative;
+	z-index: 1;
+	margin: 15px auto;
+	width: 130px;
+	height: 130px;
+	filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25));
+	// transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+	// animation: float 3s ease-in-out infinite;
 	image-rendering: pixelated;
 }
+@keyframes float {
+	0%, 100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-8px);
+	}
+}
 .pokemon-info {
-	margin-top: 10px;
+	position: relative;
+	z-index: 1;
+	margin-top: 15px;
 	text-align: center;
 }
 .pokemon-name {
-	margin-bottom: 3px;
-	font-weight: bold;
-	font-size: 1.1em;
-	color: #2c3e50;
+	margin-bottom: 5px;
+	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+	font-weight: 700;
+	font-size: 1.2em;
+	color: $text-dark;
+	letter-spacing: 0.5px;
 }
 .pokemon-name-en {
-	margin-bottom: 8px;
-	font-size: 0.85em;
-	color: #7f8c8d;
+	margin-bottom: 10px;
+	opacity: 0.8;
+	font-style: italic;
+	font-size: 0.9em;
+	color: $text-gray;
 }
 .catch-count {
-	margin-top: 5px;
-	font-size: 0.9em;
-	color: #27ae60;
+	display: inline-block;
+	margin-top: 8px;
+	padding: 4px 12px;
+	border-radius: 12px;
+	background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
+	box-shadow: 0 2px 6px rgba(76, 175, 80, 0.3);
+	font-weight: 600;
+	font-size: 0.85em;
+	color: white;
+	transition: all 0.3s ease;
+	&:hover {
+		box-shadow: 0 3px 8px rgba(76, 175, 80, 0.5);
+		transform: scale(1.05);
+	}
 }
 .first-caught {
-	margin-top: 3px;
+	display: inline-block;
+	margin-top: 6px;
+	padding: 3px 8px;
+	border-radius: 8px;
+	background: #f5f5f5;
 	font-size: 0.75em;
-	color: #95a5a6;
+	color: $text-light-gray;
 }
-/* 空状态 */
+// 空状态
 .empty-state {
 	padding: 60px 20px;
 	text-align: center;
-	color: #95a5a6;
+	color: $text-light-gray;
 	grid-column: 1 / -1;
+	p {
+		margin: 10px 0;
+		font-size: 1.2em;
+	}
+	.tip {
+		font-size: 1em;
+		color: $text-lighter-gray;
+	}
 }
-.empty-state p {
-	margin: 10px 0;
-	font-size: 1.2em;
-}
-.empty-state .tip {
-	font-size: 1em;
-	color: #bdc3c7;
-}
-/* 刷新按钮 */
+// 刷新按钮
 .refresh-section {
 	text-align: center;
 }
 .refresh-btn {
+	@include button-base;
 	padding: 12px 30px;
-	border: none;
-	border-radius: 25px;
-	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-	box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-	cursor: pointer;
+	background: $primary-gradient;
+	box-shadow: $shadow-primary;
 	font-size: 1em;
 	color: white;
-	transition: all 0.3s ease;
+	&:hover {
+		box-shadow: $shadow-primary-hover;
+	}
 }
-.refresh-btn:hover {
-	box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-	transform: translateY(-2px);
-}
-.refresh-btn:active {
-	transform: translateY(0);
-}
-/* 加载和错误状态 */
+// 加载和错误状态
 .loading,
 .error {
 	padding: 60px 20px;
 	text-align: center;
 	font-size: 1.2em;
-	color: #7f8c8d;
+	color: $text-gray;
 }
-.error p {
-	margin-bottom: 20px;
-	color: #e74c3c;
+.error {
+	p {
+		margin-bottom: 20px;
+		color: $error-color;
+	}
+	button {
+		padding: 10px 25px;
+		border: none;
+		border-radius: $border-radius-md;
+		background: $error-color;
+		cursor: pointer;
+		color: white;
+		transition: background 0.3s ease;
+		&:hover {
+			background: $error-color-dark;
+		}
+	}
 }
-.error button {
-	padding: 10px 25px;
-	border: none;
-	border-radius: 20px;
-	background: #e74c3c;
-	cursor: pointer;
-	color: white;
-	transition: background 0.3s ease;
-}
-.error button:hover {
-	background: #c0392b;
-}
-/* 响应式设计 */
-@media (max-width: 768px) {
-	.pokedex-header h1 {
-		font-size: 1.8em;
+// 响应式设计
+@media (max-width: $breakpoint-mobile) {
+	.pokedex-header {
+		h1 {
+			font-size: 1.8em;
+		}
 	}
 	.stats-panel {
 		grid-template-columns: 1fr;
