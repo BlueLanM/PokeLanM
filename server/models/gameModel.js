@@ -28,9 +28,7 @@ export const initGameTables = async() => {
         ALTER TABLE players 
         MODIFY COLUMN password VARCHAR(255) NOT NULL
       `);
-			console.log("✓ 密码字段长度已更新为VARCHAR(255)");
 		} catch (err) {
-			console.log("✓ 密码字段已经是正确长度");
 		}
 
 		// 添加统计字段
@@ -50,10 +48,8 @@ export const initGameTables = async() => {
         ALTER TABLE players 
         ADD COLUMN is_admin BOOLEAN DEFAULT FALSE
       `);
-			console.log("✓ 管理员字段已添加");
 		} catch (err) {
 			// 字段已存在，忽略错误
-			console.log("✓ 管理员字段已存在");
 		}
 
 		// 精灵球类型表
@@ -73,10 +69,8 @@ export const initGameTables = async() => {
         ALTER TABLE pokeball_types 
         ADD COLUMN image VARCHAR(255)
       `);
-			console.log("✓ 精灵球图片字段已添加");
 		} catch (err) {
 			// 字段已存在，忽略错误
-			console.log("✓ 精灵球图片字段已存在");
 		}
 
 		// 插入初始精灵球数据
@@ -186,10 +180,8 @@ export const initGameTables = async() => {
         ALTER TABLE gyms 
         ADD COLUMN max_hp INT DEFAULT 100 AFTER hp
       `);
-			console.log("✓ 道馆 max_hp 字段已添加");
 		} catch (err) {
 			// 字段已存在，忽略错误
-			console.log("✓ 道馆 max_hp 字段已存在");
 		}
 
 		// 插入初始道馆数据
