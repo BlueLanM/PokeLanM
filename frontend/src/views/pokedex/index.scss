@@ -204,10 +204,8 @@ $breakpoint-mobile: 768px;
 	// 添加闪光效果背景
 	&::before {
 		position: absolute;
-		left: -50%;
-		top: -50%;
-		width: 200%;
-		height: 200%;
+		left: 0;
+		top: 0;
 		background: linear-gradient(
 			45deg,
 			transparent 30%,
