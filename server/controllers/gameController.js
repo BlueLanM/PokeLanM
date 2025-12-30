@@ -243,7 +243,8 @@ export const catchPokemon = async(req, res) => {
 
 		// 最终捕捉率 = (宝可梦基础捕捉率 * 精灵球倍率) + 血量加成
 		const baseCatchRate = pokemonCatchRate * ballMultiplier;
-		const finalCatchRate = Math.min(baseCatchRate + hpBonus, 0.98); // 最高98%捕捉率
+		// 大师球必中，其他球最高98%捕捉率
+		const finalCatchRate = pokeballTypeId === 4 ? 1.0 : Math.min(baseCatchRate + hpBonus, 0.98);
 
 		// 判断是否捕捉成功
 		const randomValue = Math.random();
