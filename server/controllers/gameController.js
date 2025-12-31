@@ -874,6 +874,103 @@ export const adminGetGyms = async(req, res) => {
 	}
 };
 
+// 导出道馆数据为JSON
+export const exportGyms = async(req, res) => {
+	try {
+		const gyms = await GameModel.getAllGyms();
+		
+		// 设置响应头，让浏览器下载文件
+		res.setHeader('Content-Type', 'application/json');
+		res.setHeader('Content-Disposition', `attachment; filename=gyms-export-${Date.now()}.json`);
+		
+		res.json({
+			exportDate: new Date().toISOString(),
+			totalCount: gyms.length,
+			data: gyms
+		});
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+// 导入道馆数据
+export const importGyms = async(req, res) => {
+	try {
+		const { gyms, mode = 'merge' } = req.body; // mode: 'merge'(合并) 或 'replace'(替换)
+		
+		if (!Array.isArray(gyms) || gyms.length === 0) {
+			return res.status(400).json({ error: "导入数据格式错误或为空" });
+		}
+		
+		let successCount = 0;
+		let errorCount = 0;
+		const errors = [];
+		
+		// 如果是替换模式，先删除所有现有道馆（可选，根据需求）
+		// 注意：这里不删除，以避免数据丢失风险
+		
+		// 遍历导入的道馆数据
+		for (const gym of gyms) {
+			try {
+				// 验证必填字段
+				if (!gym.name || !gym.leader_name || !gym.badge_name) {
+					errorCount++;
+					errors.push(`道馆 "${gym.name || '未知'}" 缺少必填字段`);
+					continue;
+				}
+				
+				// 检查是否已存在相同ID的道馆
+				if (gym.id) {
+					const existing = await GameModel.getGym(gym.id);
+					if (existing) {
+						// 如果存在，更新
+						const result = await GameModel.updateGym(gym.id, gym);
+						if (result.success) {
+							successCount++;
+						} else {
+							errorCount++;
+							errors.push(`更新道馆 "${gym.name}" 失败: ${result.message}`);
+						}
+					} else {
+						// 如果不存在，添加（不指定ID，让数据库自动生成）
+						const gymDataWithoutId = { ...gym };
+						delete gymDataWithoutId.id;
+						const result = await GameModel.addGym(gymDataWithoutId);
+						if (result.success) {
+							successCount++;
+						} else {
+							errorCount++;
+							errors.push(`添加道馆 "${gym.name}" 失败: ${result.message}`);
+						}
+					}
+				} else {
+					// 没有ID，直接添加
+					const result = await GameModel.addGym(gym);
+					if (result.success) {
+						successCount++;
+					} else {
+						errorCount++;
+						errors.push(`添加道馆 "${gym.name}" 失败: ${result.message}`);
+					}
+				}
+			} catch (error) {
+				errorCount++;
+				errors.push(`处理道馆 "${gym.name || '未知'}" 时出错: ${error.message}`);
+			}
+		}
+		
+		res.json({
+			success: true,
+			message: `导入完成！成功: ${successCount}, 失败: ${errorCount}`,
+			successCount,
+			errorCount,
+			errors: errors.length > 0 ? errors : undefined
+		});
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
 // 获取单个道馆
 export const adminGetGym = async(req, res) => {
 	try {

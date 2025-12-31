@@ -350,6 +350,100 @@ const Pokemon = () => {
 		}
 	};
 
+	// 导出道馆数据
+	const handleExportGyms = async () => {
+		try {
+			const data = await gameAPI.exportGyms();
+			
+			// 创建Blob并下载
+			const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+			const url = window.URL.createObjectURL(blob);
+			const link = document.createElement('a');
+			link.href = url;
+			link.download = `gyms-export-${Date.now()}.json`;
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			window.URL.revokeObjectURL(url);
+			
+			message.success('导出成功！');
+		} catch (error) {
+			message.error('导出失败！');
+		}
+	};
+
+	// 导入道馆数据
+	const handleImportGyms = () => {
+		// 创建文件输入元素
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = '.json';
+		
+		input.onchange = async (e) => {
+			const file = e.target.files[0];
+			if (!file) return;
+			
+			try {
+				setLoading(true);
+				const reader = new FileReader();
+				
+				reader.onload = async (event) => {
+					try {
+						const jsonData = JSON.parse(event.target.result);
+						
+						// 验证数据格式
+						let gymsToImport = [];
+						if (Array.isArray(jsonData)) {
+							gymsToImport = jsonData;
+						} else if (jsonData.data && Array.isArray(jsonData.data)) {
+							gymsToImport = jsonData.data;
+						} else {
+							message.error('导入文件格式错误！');
+							setLoading(false);
+							return;
+						}
+						
+						if (gymsToImport.length === 0) {
+							message.error('导入文件中没有道馆数据！');
+							setLoading(false);
+							return;
+						}
+						
+						// 调用导入API
+						const result = await gameAPI.importGyms(gymsToImport, 'merge');
+						
+						if (result.success) {
+							message.success(result.message || '导入成功！');
+							if (result.errors && result.errors.length > 0) {
+								console.warn('导入时出现部分错误:', result.errors);
+							}
+							fetchGyms(); // 刷新列表
+						} else {
+							message.error(result.message || '导入失败！');
+						}
+					} catch (parseError) {
+						message.error('解析JSON文件失败！请检查文件格式。');
+						console.error('解析错误:', parseError);
+					} finally {
+						setLoading(false);
+					}
+				};
+				
+				reader.onerror = () => {
+					message.error('读取文件失败！');
+					setLoading(false);
+				};
+				
+				reader.readAsText(file);
+			} catch (error) {
+				message.error('导入失败！');
+				setLoading(false);
+			}
+		};
+		
+		input.click();
+	};
+
 	const handleAddGym = () => {
 		setGymFormData({
 			name: '',
@@ -787,6 +881,8 @@ const Pokemon = () => {
 					<div className="pokemon-header">
 						<div className="pokemon-header-left">
 							<Button type="primary" onClick={handleAddGym}>添加道馆</Button>
+							<Button type="default" onClick={handleExportGyms} style={{ marginLeft: '10px' }}>📤 导出数据</Button>
+							<Button type="default" onClick={handleImportGyms} style={{ marginLeft: '10px' }}>📥 导入数据</Button>
 						</div>
 						<div className="pokemon-header-right">
 							<h3 style={{ margin: 0 }}>道馆列表 (共 {gyms.length} 个)</h3>

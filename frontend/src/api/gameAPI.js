@@ -312,3 +312,20 @@ export const adminDeleteGym = (id) => {
 		method: 'DELETE'
 	});
 };
+
+// 导出道馆数据
+export const exportGyms = () => {
+	return request({
+		url: '/game/admin/gyms/export',
+		method: 'GET'
+	});
+};
+
+// 导入道馆数据
+export const importGyms = (gyms, mode = 'merge') => {
+	return request({
+		url: '/game/admin/gyms/import',
+		method: 'POST',
+		data: { gyms, mode }
+	});
+};

@@ -59,6 +59,8 @@ router.get("/game/admin/gym/:id", gameController.adminGetGym);
 router.post("/game/admin/gym", gameController.adminAddGym);
 router.put("/game/admin/gym/:id", gameController.adminUpdateGym);
 router.delete("/game/admin/gym/:id", gameController.adminDeleteGym);
+router.get("/game/admin/gyms/export", gameController.exportGyms); // 导出道馆数据
+router.post("/game/admin/gyms/import", gameController.importGyms); // 导入道馆数据
 
 // 地图系统
 router.get("/game/maps", gameController.getAllMaps);

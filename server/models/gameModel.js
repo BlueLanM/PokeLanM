@@ -698,14 +698,17 @@ export const migrateExtraPartyToStorage = async(playerId) => {
 export const getLeaderboard = async() => {
 	const [rows] = await pool.query(
 		`SELECT 
-			id,
-			name,
-			pokemon_caught,
-			gyms_defeated,
-			money,
-			created_at
-		FROM players
-		ORDER BY pokemon_caught DESC, gyms_defeated DESC, money DESC
+			p.id,
+			p.name,
+			p.pokemon_caught,
+			p.gyms_defeated,
+			p.money,
+			p.created_at,
+			COUNT(pb.id) as badge_count
+		FROM players p
+		LEFT JOIN player_badges pb ON p.id = pb.player_id
+		GROUP BY p.id
+		ORDER BY p.pokemon_caught DESC, p.gyms_defeated DESC, p.money DESC
 		LIMIT 50`,
 		[]
 	);

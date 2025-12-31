@@ -97,6 +97,9 @@ const PokemonGame = () => {
 			} else {
 				loadPlayer(savedPlayerId);
 			}
+			
+			// 加载道馆数据以获取总数
+			loadGymsData();
 		}
 	}, []);
 
@@ -372,7 +375,17 @@ const PokemonGame = () => {
 		Message.info("你逃跑了！");
 	};
 
-	// 加载道馆
+	// 加载道馆数据(仅获取数据,不切换视图)
+	const loadGymsData = async () => {
+		try {
+			const data = await gameAPI.getGyms();
+			setGyms(data.gyms);
+		} catch (error) {
+			console.error("加载道馆数据失败:", error);
+		}
+	};
+
+	// 加载道馆(切换到道馆视图)
 	const loadGyms = async () => {
 		try {
 			const data = await gameAPI.getGyms();
@@ -721,7 +734,7 @@ const PokemonGame = () => {
 							</div>
 
 							<div className="info-section">
-								<h3>🏆 我的徽章 ({badges.length}/3)</h3>
+								<h3>🏆 我的徽章 ({badges.length}/{gyms.length || 5})</h3>
 								{badges.length > 0 ? (
 									<div className="badges-list">
 										{badges.map((badge) => (
