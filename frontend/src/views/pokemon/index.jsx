@@ -1081,7 +1081,7 @@ const Pokemon = () => {
 							</div>
 							<div className="pokemon-flex">
 								徽章图片：<Input 
-										placeholder="例如: https://raw.githubusercontent.com/BlueLanM/pokemon-nodejs/main/images/Boulder_Badge.png" 
+										placeholder="例如: https://raw.githubusercontent.com/BlueLanM/PokeLanM/main/images/Boulder_Badge.png" 
 										width={420}
 										value={gymFormData.badge_image}
 										onChange={(e) => setGymFormData({...gymFormData, badge_image: e.target.value})}

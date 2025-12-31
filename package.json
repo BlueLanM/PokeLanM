@@ -1,5 +1,5 @@
 {
-  "name": "pokemon-nodejs",
+  "name": "PokeLanM",
   "version": "1.0.0",
   "type": "module",
   "description": "Pokemon project with Node.js backend and React frontend",

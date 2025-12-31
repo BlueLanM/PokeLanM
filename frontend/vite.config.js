@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 // https://vite.dev/config/
 export default defineConfig({
 	// GitHub Pages 部署配置
-	base: process.env.NODE_ENV === 'production' ? '/pokemon-nodejs/' : '/',
+	base: process.env.NODE_ENV === 'production' ? '/PokeLanM/' : '/',
 	
 	esbuild: {
 		jsxInject: "import React from 'react'" // 自动注入 React 导入

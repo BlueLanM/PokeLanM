@@ -230,9 +230,9 @@ export const initGameTables = async() => {
 		// 插入初始道馆数据
 		await connection.query(`
       INSERT IGNORE INTO gyms (id, name, leader_name, pokemon_id, pokemon_name, pokemon_sprite, level, hp, max_hp, attack, reward_money, badge_name, badge_image) VALUES
-      (1, '岩石道馆', '小刚', 74, 'geodude', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/74.png', 15, 80, 80, 20, 500, '灰色徽章', 'https://raw.githubusercontent.com/BlueLanM/pokemon-nodejs/main/images/Boulder_Badge.png'),
-      (2, '水系道馆', '小霞', 120, 'staryu', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/120.png', 20, 100, 100, 25, 800, '蓝色徽章', 'https://raw.githubusercontent.com/BlueLanM/pokemon-nodejs/main/images/Cascade_Badge.png'),
-      (3, '电系道馆', '马志士', 25, 'pikachu', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png', 25, 120, 120, 30, 1000, '橙色徽章', 'https://raw.githubusercontent.com/BlueLanM/pokemon-nodejs/main/images/Thunder_Badge.png')
+      (1, '岩石道馆', '小刚', 74, 'geodude', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/74.png', 15, 80, 80, 20, 500, '灰色徽章', 'https://raw.githubusercontent.com/BlueLanM/PokeLanM/main/images/Boulder_Badge.png'),
+      (2, '水系道馆', '小霞', 120, 'staryu', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/120.png', 20, 100, 100, 25, 800, '蓝色徽章', 'https://raw.githubusercontent.com/BlueLanM/PokeLanM/main/images/Cascade_Badge.png'),
+      (3, '电系道馆', '马志士', 25, 'pikachu', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png', 25, 120, 120, 30, 1000, '橙色徽章', 'https://raw.githubusercontent.com/BlueLanM/PokeLanM/main/images/Thunder_Badge.png')
     `);
 
 		// 更新现有道馆数据的 max_hp（如果 max_hp 为空或0）
