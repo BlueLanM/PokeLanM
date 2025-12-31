@@ -2,7 +2,7 @@
 
 这是一个基于文字的宝可梦冒险游戏，包含探索、战斗、捕捉、道馆挑战、商店等多个模块。
 
-- [Pokemon](https://bluelanm.github.io/pokemon-nodejs/) - 在线体验
+- [PokeLanM](https://bluelanm.github.io/pokemon-nodejs/) - 在线体验
 
 ## ✨ 游戏特色
 
