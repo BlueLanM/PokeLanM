@@ -405,8 +405,6 @@ export const attack = async(req, res) => {
 			battleLog.push(`敌方 ${enemyName} 造成了 ${enemyDamage} 点伤害！`);
 		}
 
-		playerPokemon.hp -= enemyDamage;
-
 		if (playerPokemon.hp <= 0) {
 			playerPokemon.hp = 0;
 			return res.json({
