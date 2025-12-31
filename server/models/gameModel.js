@@ -232,7 +232,7 @@ export const initGameTables = async() => {
       INSERT IGNORE INTO gyms (id, name, leader_name, pokemon_id, pokemon_name, pokemon_sprite, level, hp, max_hp, attack, reward_money, badge_name, badge_image) VALUES
       (1, '岩石道馆', '小刚', 74, 'geodude', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/74.png', 15, 80, 80, 20, 500, '灰色徽章', 'https://raw.githubusercontent.com/BlueLanM/pokemon-nodejs/main/images/Boulder_Badge.png'),
       (2, '水系道馆', '小霞', 120, 'staryu', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/120.png', 20, 100, 100, 25, 800, '蓝色徽章', 'https://raw.githubusercontent.com/BlueLanM/pokemon-nodejs/main/images/Cascade_Badge.png'),
-      (3, '电系道馆', '马 kritik', 25, 'pikachu', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png', 25, 120, 120, 30, 1000, '橙色徽章', 'https://raw.githubusercontent.com/BlueLanM/pokemon-nodejs/main/images/Thunder_Badge.png')
+      (3, '电系道馆', '马志士', 25, 'pikachu', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png', 25, 120, 120, 30, 1000, '橙色徽章', 'https://raw.githubusercontent.com/BlueLanM/pokemon-nodejs/main/images/Thunder_Badge.png')
     `);
 
 		// 更新现有道馆数据的 max_hp（如果 max_hp 为空或0）
@@ -1455,7 +1455,7 @@ export const getPokemonEvolutionInfo = (pokemonId) => {
 			id: nextEvolution.id,
 			name: nextEvolution.name,
 			name_en: nextEvolution.name_en,
-			sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/${nextEvolution.id}.png`
+			sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/${nextEvolution.id}.gif`
 		},
 		requiredLevel,
 		totalStages: evolutionChain.length
@@ -1469,9 +1469,10 @@ export const getPokemonEvolutionInfo = (pokemonId) => {
  */
 export const evolvePokemon = async(partyId, playerId = null) => {
 	try {
-		// 获取当前宝可梦信息
+		// 先在背包中查找
 		let query = "SELECT * FROM player_party WHERE id = ?";
 		let params = [partyId];
+		let tableName = "player_party";
 
 		// 如果提供了playerId，验证所有权
 		if (playerId) {
@@ -1479,7 +1480,21 @@ export const evolvePokemon = async(partyId, playerId = null) => {
 			params = [partyId, playerId];
 		}
 
-		const [pokemon] = await pool.query(query, params);
+		let [pokemon] = await pool.query(query, params);
+
+		// 如果背包中没有,在仓库中查找
+		if (pokemon.length === 0) {
+			tableName = "player_storage";
+			query = "SELECT * FROM player_storage WHERE id = ?";
+			params = [partyId];
+
+			if (playerId) {
+				query = "SELECT * FROM player_storage WHERE id = ? AND player_id = ?";
+				params = [partyId, playerId];
+			}
+
+			[pokemon] = await pool.query(query, params);
+		}
 
 		if (pokemon.length === 0) {
 			return { message: playerId ? "宝可梦不存在或无权操作" : "宝可梦不存在", success: false };
@@ -1520,9 +1535,11 @@ export const evolvePokemon = async(partyId, playerId = null) => {
 		const hpBonus = 20;
 		const attackBonus = 10;
 
-		// 更新为进化后的宝可梦
+		console.log("✅ 开始进化:", poke.pokemon_name, "->", nextEvolution.name, "表:", tableName);
+
+		// 更新为进化后的宝可梦 (使用动态表名)
 		await pool.query(
-			`UPDATE player_party 
+			`UPDATE ${tableName} 
        SET pokemon_id = ?, 
            pokemon_name = ?, 
            pokemon_sprite = ?,
@@ -1581,10 +1598,19 @@ export const evolvePokemon = async(partyId, playerId = null) => {
  */
 export const checkEvolution = async(partyId) => {
 	try {
-		const [pokemon] = await pool.query(
+		// 先在背包中查找
+		let [pokemon] = await pool.query(
 			"SELECT * FROM player_party WHERE id = ?",
 			[partyId]
 		);
+
+		// 如果背包中没有,在仓库中查找
+		if (pokemon.length === 0) {
+			[pokemon] = await pool.query(
+				"SELECT * FROM player_storage WHERE id = ?",
+				[partyId]
+			);
+		}
 
 		if (pokemon.length === 0) {
 			return { message: "宝可梦不存在", success: false };

@@ -46,7 +46,7 @@ const EvolutionModal = ({ visible, pokemon, evolutionInfo, onConfirm, onCancel }
             <div className="evolution-preview">
               <div className="evolution-pokemon current">
                 <img 
-                  src={pokemon.pokemon_sprite || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.pokemon_id}.png`}
+                  src={pokemon.pokemon_sprite || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/${pokemon.pokemon_id}.gif`}
                   alt={pokemon.pokemon_name}
                 />
                 <h3>{pokemon.pokemon_name}</h3>
@@ -124,7 +124,7 @@ const EvolutionModal = ({ visible, pokemon, evolutionInfo, onConfirm, onCancel }
             <div className="evolution-light">
               <div className="pokemon-evolving">
                 <img 
-                  src={pokemon.pokemon_sprite || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.pokemon_id}.png`}
+                  src={pokemon.pokemon_sprite || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/${pokemon.pokemon_id}.gif`}
                   alt={pokemon.pokemon_name}
                   className="fade-out"
                 />

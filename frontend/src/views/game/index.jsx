@@ -84,6 +84,7 @@ const PokemonGame = () => {
 	const [showEvolutionModal, setShowEvolutionModal] = useState(false); // 进化Modal
 	const [evolutionInfo, setEvolutionInfo] = useState(null); // 进化信息
 	const [evolvingPokemon, setEvolvingPokemon] = useState(null); // 正在进化的宝可梦
+	const [evolutionStates, setEvolutionStates] = useState({}); // 存储每只宝可梦的进化状态 {pokemonId: canEvolve}
 
 	// 初始化或加载玩家
 	useEffect(() => {
@@ -119,6 +120,11 @@ const PokemonGame = () => {
 			setPlayerParty(data.party || []);
 			setItems(data.items || []);
 			setBadges(data.badges || []); // 加载徽章数据
+
+			// 检查背包宝可梦的进化状态
+			if (data.party && data.party.length > 0) {
+				await checkPokemonEvolutionStates(data.party);
+			}
 
 			// 同时加载地图状态
 			await loadMaps(playerId);
@@ -442,11 +448,38 @@ const PokemonGame = () => {
 		}
 	};
 
+	// 批量检查宝可梦的进化状态
+	const checkPokemonEvolutionStates = async (pokemonList) => {
+		try {
+			const states = {};
+			// 批量异步检查所有宝可梦
+			await Promise.all(
+				pokemonList.map(async (pokemon) => {
+					try {
+						const data = await gameAPI.checkPokemonEvolution(pokemon.id);
+						// 只有当宝可梦满足进化条件时(不是最终形态且等级足够),才设置为true
+						states[pokemon.id] = data.success && data.canEvolveNow === true;
+					} catch (error) {
+						// 出错时默认为不可进化
+						states[pokemon.id] = false;
+					}
+				})
+			);
+			setEvolutionStates(prevStates => ({ ...prevStates, ...states }));
+		} catch (error) {
+			console.error("检查进化状态失败:", error);
+		}
+	};
+
 	// 加载仓库
 	const loadStorage = async () => {
 		try {
 			const data = await gameAPI.getStorage(player.id);
 			setStorage(data.storage);
+			// 检查仓库宝可梦的进化状态
+			if (data.storage && data.storage.length > 0) {
+				await checkPokemonEvolutionStates(data.storage);
+			}
 			setCurrentView("storage");
 		} catch (error) {
 			Message.error("加载仓库失败");
@@ -529,6 +562,10 @@ const PokemonGame = () => {
 				setEvolvingPokemon(null);
 				// 重新加载玩家数据
 				await loadPlayer(player.id);
+				// 如果当前在仓库视图,也刷新仓库数据
+				if (currentView === "storage") {
+					await loadStorage();
+				}
 			}
 		} catch (error) {
 			Message.error(error.error || "进化失败");
@@ -923,13 +960,16 @@ const PokemonGame = () => {
 									<p>攻击: {playerParty[0].attack}</p>
 									<p>经验: {formatExpDisplay(playerParty[0].level_exp || 0, playerParty[0].level)}</p>
 									{playerParty[0].level >= 100 && <p className="max-level">⭐ 满级</p>}
-									<Button
-										size="small"
-										onClick={() => handleCheckEvolution(playerParty[0])}
-										style={{ marginTop: '10px', width: '100%' }}
-									>
-										✨ 查看进化
-									</Button>
+									{/* 只有可进化的宝可梦才显示进化按钮 */}
+									{evolutionStates[playerParty[0].id] && (
+										<Button
+											size="small"
+											onClick={() => handleCheckEvolution(playerParty[0])}
+											style={{ marginTop: '10px', width: '100%' }}
+										>
+											✨ 查看进化
+										</Button>
+									)}
 								</Tilt>
 						) : (
 							<p style={{ padding: "20px", textAlign: "center", color: "#999" }}>
@@ -959,32 +999,57 @@ const PokemonGame = () => {
 					<Button onClick={() => setCurrentView("home")}>返回</Button>
 					{storage.length > 0 ? (
 						<div className="pokemon-grid">
-							{storage.map((pokemon) => {
-								// 仓库使用正常图片
-								const normalSprite = pokemon.pokemon_sprite || `https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/detail/${pokemon.pokemon_id}.png`;
-								return (
-									<Tilt
-										tiltMaxAngleX={5} 
-										tiltMaxAngleY={5} 
-										transitionSpeed={400} 
-										perspective={500} 
-										key={pokemon.id} 
-										className="pokemon-card"
-									>
-										<img src={normalSprite} alt={pokemon.pokemon_name} />
-										<h3>{pokemon.pokemon_name}</h3>
-										<p>等级: Lv.{pokemon.level}</p>
-										<p>HP: {pokemon.hp}/{pokemon.max_hp}</p>
-										<p>攻击: {pokemon.attack}</p>
-										<Button
-											size="small"
-											onClick={() => handleSwitchMainPokemon(pokemon)}
+								{storage.map((pokemon) => {
+									// 仓库使用正常图片
+									const normalSprite = pokemon.pokemon_sprite || `https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/detail/${pokemon.pokemon_id}.png`;
+									return (
+										<Tilt
+											tiltMaxAngleX={2} 
+											tiltMaxAngleY={2} 
+											transitionSpeed={400} 
+											perspective={500} 
+											key={pokemon.id} 
+											className="pokemon-card"
 										>
-											设为主战
-										</Button>
-									</Tilt>
-								);
-							})}
+											<img src={normalSprite} alt={pokemon.pokemon_name} />
+											<h3>{pokemon.pokemon_name}</h3>
+											<p>等级: Lv.{pokemon.level}</p>
+											<p>HP: {pokemon.hp}/{pokemon.max_hp}</p>
+											<p>攻击: {pokemon.attack}</p>
+											<div style={{ 
+												display: 'flex', 
+												gap: '8px', 
+												justifyContent: 'center', 
+												flexWrap: 'wrap',
+												position: 'relative',
+												zIndex: 10,
+												pointerEvents: 'auto'
+											}}>
+												<Button
+													size="small"
+													onClick={(e) => {
+														e.stopPropagation();
+														handleSwitchMainPokemon(pokemon);
+													}}
+												>
+													设为主战
+												</Button>
+												{/* 只有可进化的宝可梦才显示进化按钮 */}
+												{evolutionStates[pokemon.id] && (
+													<Button
+														size="small"
+														onClick={(e) => {
+															e.stopPropagation();
+															handleCheckEvolution(pokemon);
+														}}
+													>
+														✨ 查看进化
+													</Button>
+												)}
+											</div>
+										</Tilt>
+									);
+								})}
 						</div>
 					) : (
 						<p style={{ padding: "20px", textAlign: "center", color: "#999" }}>
