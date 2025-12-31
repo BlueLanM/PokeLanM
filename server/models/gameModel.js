@@ -250,6 +250,67 @@ export const initGameTables = async() => {
         UNIQUE KEY unique_special_badge (player_id, badge_type)
       )
     `);
+
+		// 地图表
+		await connection.query(`
+      CREATE TABLE IF NOT EXISTS maps (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        description TEXT,
+        min_level INT NOT NULL,
+        max_level INT NOT NULL,
+        unlock_condition VARCHAR(255),
+        unlock_value INT DEFAULT 0,
+        reward_multiplier DECIMAL(3,2) DEFAULT 1.00,
+        background_image VARCHAR(255),
+        map_order INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+		// 插入初始地图数据
+		await connection.query(`
+      INSERT IGNORE INTO maps (id, name, description, min_level, max_level, unlock_condition, unlock_value, reward_multiplier, background_image, map_order) VALUES
+      (1, '新手村', '适合刚开始冒险的训练师', 1, 10, 'none', 0, 1.00, '', 1),
+      (2, '森林深处', '茂密的森林，栖息着更强的宝可梦', 10, 20, 'level', 10, 1.50, '', 2),
+      (3, '山脉地带', '险峻的山脉，需要一定实力才能探索', 20, 30, 'level', 20, 2.00, '', 3),
+      (4, '海滨沙滩', '美丽的海滩，水系宝可梦的聚集地', 30, 40, 'level', 30, 2.50, '', 4),
+      (5, '火山口', '炙热的火山，只有强者才能进入', 40, 50, 'level', 40, 3.00, '', 5),
+      (6, '冰雪高原', '寒冷的高原，冰系宝可梦的天堂', 50, 60, 'level', 50, 3.50, '', 6),
+      (7, '雷电峡谷', '雷声隆隆的峡谷，电系宝可梦横行', 60, 70, 'level', 60, 4.00, '', 7),
+      (8, '黑暗洞窟', '深不见底的洞窟，危险重重', 70, 80, 'badges', 5, 4.50, '', 8),
+      (9, '龙之谷', '传说中龙系宝可梦的栖息地', 80, 90, 'level', 80, 5.00, '', 9),
+      (10, '冠军之路', '只有最强的训练师才能踏足的地方', 90, 100, 'badges', 8, 6.00, '', 10)
+    `);
+
+		// 玩家地图解锁表
+		await connection.query(`
+      CREATE TABLE IF NOT EXISTS player_map_unlocks (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        player_id INT NOT NULL,
+        map_id INT NOT NULL,
+        unlocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
+        FOREIGN KEY (map_id) REFERENCES maps(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_map_unlock (player_id, map_id)
+      )
+    `);
+
+		// 给所有现有玩家解锁第一个地图
+		await connection.query(`
+      INSERT IGNORE INTO player_map_unlocks (player_id, map_id)
+      SELECT id, 1 FROM players
+    `);
+
+		// 添加当前地图字段到玩家表
+		try {
+			await connection.query(`
+        ALTER TABLE players 
+        ADD COLUMN current_map_id INT DEFAULT 1
+      `);
+		} catch (err) {
+			// 字段已存在，忽略错误
+		}
 	} catch (error) {
 		console.error("❌ Error initializing game tables:", error);
 		throw error;
@@ -264,12 +325,17 @@ export const registerPlayer = async(name, password) => {
 	const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
 	const [result] = await pool.query(
-		"INSERT INTO players (name, password, money, pokemon_caught, gyms_defeated) VALUES (?, ?, 1000, 0, 0)",
+		"INSERT INTO players (name, password, money, pokemon_caught, gyms_defeated, current_map_id) VALUES (?, ?, 1000, 0, 0, 1)",
 		[name, hashedPassword]
 	);
 	// 给新玩家初始物品
 	await pool.query(
 		"INSERT INTO player_items (player_id, pokeball_type_id, quantity) VALUES (?, 1, 5)",
+		[result.insertId]
+	);
+	// 给新玩家解锁第一个地图
+	await pool.query(
+		"INSERT INTO player_map_unlocks (player_id, map_id) VALUES (?, 1)",
 		[result.insertId]
 	);
 	return result.insertId;
@@ -969,6 +1035,240 @@ export const switchMainPokemon = async(playerId, storagePokemonId) => {
 			await pool.query("ROLLBACK");
 			throw error;
 		}
+	} catch (error) {
+		return { message: error.message, success: false };
+	}
+};
+
+// ========== 地图系统 ==========
+
+// 获取所有地图
+export const getAllMaps = async() => {
+	const [rows] = await pool.query("SELECT * FROM maps ORDER BY map_order");
+	return rows;
+};
+
+// 获取单个地图
+export const getMap = async(mapId) => {
+	const [rows] = await pool.query("SELECT * FROM maps WHERE id = ?", [mapId]);
+	return rows[0];
+};
+
+// 获取玩家已解锁的地图
+export const getPlayerUnlockedMaps = async(playerId) => {
+	const [rows] = await pool.query(
+		`SELECT m.* FROM maps m
+     JOIN player_map_unlocks pmu ON m.id = pmu.map_id
+     WHERE pmu.player_id = ?
+     ORDER BY m.map_order`,
+		[playerId]
+	);
+	return rows;
+};
+
+// 获取玩家所有地图状态（包含解锁状态）
+export const getPlayerMapsStatus = async(playerId) => {
+	// 获取所有地图
+	const allMaps = await getAllMaps();
+
+	// 获取玩家已解锁的地图ID
+	const [unlockedMaps] = await pool.query(
+		"SELECT map_id FROM player_map_unlocks WHERE player_id = ?",
+		[playerId]
+	);
+	const unlockedMapIds = new Set(unlockedMaps.map(m => m.map_id));
+
+	// 获取玩家信息（用于检查解锁条件和当前地图）
+	const player = await getPlayer(playerId);
+	const party = await getPlayerParty(playerId);
+	const badges = await getPlayerBadges(playerId);
+
+	// 玩家宝可梦等级和当前地图
+	const playerLevel = party.length > 0 ? party[0].level : 1;
+	const badgeCount = badges.length;
+	const currentMapId = player?.current_map_id;
+
+	// 为每个地图添加解锁状态和解锁条件
+	const mapsWithStatus = allMaps.map(map => {
+		const isUnlocked = unlockedMapIds.has(map.id);
+		const isCurrent = map.id === currentMapId;
+		let canUnlock = false;
+		let unlockMessage = "";
+
+		if (!isUnlocked) {
+			// 检查是否满足解锁条件
+			if (map.unlock_condition === "none") {
+				canUnlock = true;
+			} else if (map.unlock_condition === "level") {
+				canUnlock = playerLevel >= map.unlock_value;
+				unlockMessage = canUnlock
+					? "可以解锁"
+					: `需要宝可梦等级达到 ${map.unlock_value} 级`;
+			} else if (map.unlock_condition === "badges") {
+				canUnlock = badgeCount >= map.unlock_value;
+				unlockMessage = canUnlock
+					? "可以解锁"
+					: `需要获得 ${map.unlock_value} 个徽章`;
+			}
+		}
+
+		return {
+			...map,
+			canUnlock,
+			isCurrent,
+			isUnlocked,
+			unlockMessage
+		};
+	});
+
+	return mapsWithStatus;
+};
+
+// 解锁地图
+export const unlockMap = async(playerId, mapId) => {
+	try {
+		// 检查地图是否存在
+		const map = await getMap(mapId);
+		if (!map) {
+			return { message: "地图不存在", success: false };
+		}
+
+		// 检查是否已解锁
+		const [existing] = await pool.query(
+			"SELECT * FROM player_map_unlocks WHERE player_id = ? AND map_id = ?",
+			[playerId, mapId]
+		);
+
+		if (existing.length > 0) {
+			return { message: "地图已解锁", success: false };
+		}
+
+		// 检查解锁条件
+		// const player = await getPlayer(playerId);
+		const party = await getPlayerParty(playerId);
+		const badges = await getPlayerBadges(playerId);
+		const playerLevel = party.length > 0 ? party[0].level : 1;
+		const badgeCount = badges.length;
+
+		let canUnlock = false;
+		let errorMessage = "";
+
+		if (map.unlock_condition === "none") {
+			canUnlock = true;
+		} else if (map.unlock_condition === "level") {
+			if (playerLevel >= map.unlock_value) {
+				canUnlock = true;
+			} else {
+				errorMessage = `需要宝可梦等级达到 ${map.unlock_value} 级`;
+			}
+		} else if (map.unlock_condition === "badges") {
+			if (badgeCount >= map.unlock_value) {
+				canUnlock = true;
+			} else {
+				errorMessage = `需要获得 ${map.unlock_value} 个徽章`;
+			}
+		}
+
+		if (!canUnlock) {
+			return { message: errorMessage || "不满足解锁条件", success: false };
+		}
+
+		// 解锁地图
+		await pool.query(
+			"INSERT INTO player_map_unlocks (player_id, map_id) VALUES (?, ?)",
+			[playerId, mapId]
+		);
+
+		return {
+			message: `成功解锁地图：${map.name}！`,
+			success: true
+		};
+	} catch (error) {
+		return { message: error.message, success: false };
+	}
+};
+
+// 切换当前地图
+export const switchMap = async(playerId, mapId) => {
+	try {
+		// 检查地图是否解锁
+		const [unlocked] = await pool.query(
+			"SELECT * FROM player_map_unlocks WHERE player_id = ? AND map_id = ?",
+			[playerId, mapId]
+		);
+
+		if (unlocked.length === 0) {
+			return { message: "该地图尚未解锁", success: false };
+		}
+
+		// 更新当前地图
+		await pool.query(
+			"UPDATE players SET current_map_id = ? WHERE id = ?",
+			[mapId, playerId]
+		);
+
+		const map = await getMap(mapId);
+		return {
+			map,
+			message: `已切换到 ${map.name}`,
+			success: true
+		};
+	} catch (error) {
+		return { message: error.message, success: false };
+	}
+};
+
+// 管理员 - 添加地图
+export const addMap = async(mapData) => {
+	try {
+		const { name, description, min_level, max_level, unlock_condition, unlock_value, reward_multiplier, background_image, map_order } = mapData;
+		const [result] = await pool.query(
+			`INSERT INTO maps (name, description, min_level, max_level, unlock_condition, unlock_value, reward_multiplier, background_image, map_order)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			[name, description, min_level, max_level, unlock_condition, unlock_value, reward_multiplier, background_image, map_order]
+		);
+		return { id: result.insertId, success: true };
+	} catch (error) {
+		return { message: error.message, success: false };
+	}
+};
+
+// 管理员 - 更新地图
+export const updateMap = async(id, mapData) => {
+	try {
+		const { name, description, min_level, max_level, unlock_condition, unlock_value, reward_multiplier, background_image, map_order } = mapData;
+		await pool.query(
+			`UPDATE maps SET name = ?, description = ?, min_level = ?, max_level = ?, 
+			 unlock_condition = ?, unlock_value = ?, reward_multiplier = ?, background_image = ?, map_order = ?
+			 WHERE id = ?`,
+			[name, description, min_level, max_level, unlock_condition, unlock_value, reward_multiplier, background_image, map_order, id]
+		);
+		return { success: true };
+	} catch (error) {
+		return { message: error.message, success: false };
+	}
+};
+
+// 管理员 - 删除地图
+export const deleteMap = async(id) => {
+	try {
+		// 检查是否有玩家在该地图
+		const [players] = await pool.query(
+			"SELECT COUNT(*) as count FROM players WHERE current_map_id = ?",
+			[id]
+		);
+
+		if (players[0].count > 0) {
+			return { message: "无法删除，有玩家正在该地图", success: false };
+		}
+
+		// 删除地图解锁记录
+		await pool.query("DELETE FROM player_map_unlocks WHERE map_id = ?", [id]);
+
+		// 删除地图
+		await pool.query("DELETE FROM maps WHERE id = ?", [id]);
+
+		return { success: true };
 	} catch (error) {
 		return { message: error.message, success: false };
 	}

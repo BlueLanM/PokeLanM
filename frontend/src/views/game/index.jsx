@@ -37,6 +37,8 @@ const PokemonGame = () => {
 	const [isAttacking, setIsAttacking] = useState(false); // 防止重复攻击
 	const [isCatching, setIsCatching] = useState(false); // 防止重复捕捉
 	const [isSelectingStarter, setIsSelectingStarter] = useState(false); // 防止重复选择初始精灵
+	const [maps, setMaps] = useState([]); // 地图列表
+	const [currentMap, setCurrentMapState] = useState(null); // 当前地图
 
 	// 初始化或加载玩家
 	useEffect(() => {
@@ -66,9 +68,67 @@ const PokemonGame = () => {
 			setPlayerParty(data.party || []);
 			setItems(data.items || []);
 			setBadges(data.badges || []); // 加载徽章数据
+
+			// 同时加载地图状态
+			await loadMaps(playerId);
 		} catch (error) {
 			console.error("加载玩家数据错误:", error);
 			Message.error("加载玩家数据失败");
+		}
+	};
+
+	// 加载地图列表和状态
+	const loadMaps = async (playerId) => {
+		try {
+			const data = await gameAPI.getPlayerMapsStatus(playerId);
+			setMaps(data.maps || []);
+			// 找到当前选中的地图
+			const current = data.maps?.find(m => m.isCurrent);
+			if (current) {
+				setCurrentMapState(current);
+			} else {
+				// 如果没有当前地图，自动选择新手村（第一个已解锁的地图）
+				const firstUnlockedMap = data.maps?.find(m => m.isUnlocked);
+				if (firstUnlockedMap) {
+					try {
+						const switchResult = await gameAPI.switchMap(playerId, firstUnlockedMap.id);
+						if (switchResult.success) {
+							setCurrentMapState(switchResult.map);
+						}
+					} catch (error) {
+						console.error("自动切换地图失败:", error);
+					}
+				}
+			}
+		} catch (error) {
+			console.error("加载地图失败:", error);
+		}
+	};
+
+	// 切换地图
+	const handleSwitchMap = async (mapId) => {
+		try {
+			const data = await gameAPI.switchMap(player.id, mapId);
+			if (data.success) {
+				Message.success(data.message);
+				setCurrentMapState(data.map);
+				await loadMaps(player.id);
+			}
+		} catch (error) {
+			Message.error(error.error || "切换地图失败");
+		}
+	};
+
+	// 尝试解锁地图
+	const handleUnlockMap = async (mapId) => {
+		try {
+			const data = await gameAPI.unlockMap(player.id, mapId);
+			if (data.success) {
+				Message.success(data.message);
+				await loadMaps(player.id);
+			}
+		} catch (error) {
+			Message.error(error.error || "解锁失败");
 		}
 	};
 
@@ -77,12 +137,17 @@ const PokemonGame = () => {
 	const handleExplore = async () => {
 		setLoading(true);
 		try {
-			// 传递玩家宝可梦等级
+			// 传递玩家ID和宝可梦等级
 			const playerLevel = playerParty.length > 0 ? playerParty[0].level : 5;
-			const data = await gameAPI.explore(playerLevel);
+			const data = await gameAPI.explore(player.id, playerLevel);
 			setWildPokemon(data.pokemon);
 			setInBattle(true);
 			setCatchAttempts(0); // 重置捕捉次数
+
+			// 更新当前地图信息(如果返回了地图数据)
+			if (data.currentMap) {
+				setCurrentMapState(data.currentMap);
+			}
 
 			// 如果玩家有宝可梦，进入战斗模式
 			if (playerParty.length > 0) {
@@ -578,83 +643,175 @@ const PokemonGame = () => {
 
 			{currentView === "home" && (
 				<div className="home-view">
-					<div className="menu-grid">
-						<Button onClick={handleExplore} loading={loading}>
-							🔍 探索
-						</Button>
-						<Button onClick={loadGyms}>🏛️ 道馆</Button>
-						<Button onClick={loadShop}>🏪 商店</Button>
-						<Button onClick={() => setCurrentView("party")}>
-							🎒 背包 ({playerParty.length}/1)
-						</Button>
-						<Button onClick={loadStorage}>📦 仓库</Button>
-						<Button onClick={() => setCurrentView("pokedex")}>📖 图鉴</Button>
-					</div>
+					<div className="home-main-content">
+						<div className="home-left">
+							<div className="menu-grid">
+								<Button onClick={handleExplore} loading={loading}>
+									🔍 探索
+								</Button>
+								<Button onClick={loadGyms}>🏛️ 道馆</Button>
+								<Button onClick={loadShop}>🏪 商店</Button>
+								<Button onClick={() => setCurrentView("party")}>
+									🎒 背包 ({playerParty.length}/1)
+								</Button>
+								<Button onClick={loadStorage}>📦 仓库</Button>
+								<Button onClick={() => setCurrentView("pokedex")}>📖 图鉴</Button>
+							</div>
 
-			<div className="info-section">
-				<h3>我的精灵球</h3>
-				<div className="items-list">
-					{items.map((item) => (
-						<div key={item.pokeball_type_id} className="item-display">
-							{item.image && (
-								<img 
-									src={item.image} 
-									alt={item.name} 
-									style={{ width: '32px', height: '32px', marginRight: '10px', verticalAlign: 'middle' }}
-								/>
-							)}
-							<span>{item.name}: {item.quantity}</span>
-						</div>
-					))}
-				</div>
-			</div>
+							<div className="info-section">
+								<h3>我的精灵球</h3>
+								<div className="items-list">
+									{items.map((item) => (
+										<div key={item.pokeball_type_id} className="item-display">
+											{item.image && (
+												<img 
+													src={item.image} 
+													alt={item.name} 
+													style={{ width: '32px', height: '32px', marginRight: '10px', verticalAlign: 'middle' }}
+												/>
+											)}
+											<span>{item.name}: {item.quantity}</span>
+										</div>
+									))}
+								</div>
+							</div>
 
-				<div className="info-section">
-					<h3>🏆 我的徽章 ({badges.length}/3)</h3>
-					{badges.length > 0 ? (
-						<div className="badges-list">
-							{badges.map((badge) => (
-								<Tilt  
-									tiltMaxAngleX={15}
-									iltMaxAngleY={15} 
-									transitionSpeed={400} 
-									perspective={600}
-									glareEnable={true} 
-									glareMaxOpacity={0.9} 
-									glareColor="white" 
-									glarePosition="all" 
-									glareBorderRadius="12px"
-									key={badge.id} 
-									className="badge-item"
-								>
-									{badge.badge_image ? (
-										<img 
-											src={badge.badge_image} 
-											alt={badge.badge_name}
-											className="badge-item-icon"
-											style={{ 
-												width: "60px", 
-												height: "60px", 
-												
-											}}
-										/>
-									) : (
-										<span className="badge-item-icon">🏅</span>
-									)}
-									<div className="badge-info">
-										<strong>{badge.badge_name}</strong>
-										<p className="badge-gym">{badge.gym_name}</p>
-										<p className="badge-date">{new Date(badge.earned_at).toLocaleDateString('zh-CN')}</p>
+							<div className="info-section">
+								<h3>🏆 我的徽章 ({badges.length}/3)</h3>
+								{badges.length > 0 ? (
+									<div className="badges-list">
+										{badges.map((badge) => (
+											<Tilt  
+												tiltMaxAngleX={15}
+												iltMaxAngleY={15} 
+												transitionSpeed={400} 
+												perspective={600}
+												glareEnable={true} 
+												glareMaxOpacity={0.9} 
+												glareColor="white" 
+												glarePosition="all" 
+												glareBorderRadius="12px"
+												key={badge.id} 
+												className="badge-item"
+											>
+												{badge.badge_image ? (
+													<img 
+														src={badge.badge_image} 
+														alt={badge.badge_name}
+														className="badge-item-icon"
+														style={{ 
+															width: "60px", 
+															height: "60px", 
+															
+														}}
+													/>
+												) : (
+													<span className="badge-item-icon">🏅</span>
+												)}
+												<div className="badge-info">
+													<strong>{badge.badge_name}</strong>
+													<p className="badge-gym">{badge.gym_name}</p>
+													<p className="badge-date">{new Date(badge.earned_at).toLocaleDateString('zh-CN')}</p>
+												</div>
+											</Tilt>
+										))}
 									</div>
-								</Tilt>
-							))}
+								) : (
+									<p style={{ padding: "10px", color: "#999", textAlign: "center" }}>
+										还没有获得徽章，去挑战道馆吧！
+									</p>
+								)}
+							</div>
 						</div>
-					) : (
-						<p style={{ padding: "10px", color: "#999", textAlign: "center" }}>
-							还没有获得徽章，去挑战道馆吧！
-						</p>
-					)}
-				</div>
+
+						<div className="home-right">
+							<div className="maps-section">
+								<h3>🗺️ 冒险地图</h3>
+								{currentMap && (
+									<div className="current-map-info">
+										<p><strong>当前地图:</strong> {currentMap.name}</p>
+										<p><small>{currentMap.description}</small></p>
+										<p>🎯 等级范围: Lv.{currentMap.min_level} - Lv.{currentMap.max_level}</p>
+										<p>💰 奖励倍率: {currentMap.reward_multiplier}x</p>
+									</div>
+								)}
+								
+									<div className="maps-list">
+										{maps.map((map) => {
+											const isCurrentMap = currentMap?.id === map.id;
+											const canSwitch = map.isUnlocked && !isCurrentMap;
+											
+											// 解析解锁条件文本和检查是否可以解锁
+											let unlockText = "";
+											let canUnlock = false;
+											if (!map.isUnlocked) {
+												if (map.unlock_condition === "level") {
+													const mainLevel = playerParty.length > 0 ? playerParty[0].level : 0;
+													canUnlock = mainLevel >= map.unlock_value;
+													unlockText = canUnlock 
+														? `满足等级要求！点击解锁` 
+														: `需要等级${map.unlock_value} (当前: ${mainLevel})`;
+												} else if (map.unlock_condition === "badges") {
+													canUnlock = badges.length >= map.unlock_value;
+													unlockText = canUnlock
+														? `满足徽章要求！点击解锁`
+														: `需要${map.unlock_value}个徽章 (当前: ${badges.length})`;
+												} else if (map.unlock_condition === "none") {
+													canUnlock = true;
+													unlockText = "点击解锁";
+												}
+											}
+											
+											return (
+												<div 
+													key={map.id} 
+													className={`map-card ${isCurrentMap ? 'map-current' : ''} ${!map.isUnlocked ? 'map-locked' : ''}`}
+												>
+													{isCurrentMap && <span className="map-badge-current">📍 当前</span>}
+													{map.isUnlocked && !isCurrentMap && <span className="map-badge-unlocked">✅</span>}
+													{!map.isUnlocked && <span className="map-badge-locked">🔒</span>}
+												
+												<h4>{map.name}</h4>
+												<p style={{ fontSize: '12px', color: '#888', margin: '5px 0' }}>{map.description}</p>
+												<p style={{ fontSize: '13px' }}>
+													<span style={{ color: '#4CAF50' }}>Lv.{map.min_level}-{map.max_level}</span>
+													{' | '}
+													<span style={{ color: '#FFA726' }}>{map.reward_multiplier}x奖励</span>
+												</p>
+													
+													{!map.isUnlocked && (
+														<>
+															<p style={{ fontSize: '12px', color: canUnlock ? '#4CAF50' : '#ff9800', marginTop: '5px' }}>
+																{unlockText}
+															</p>
+															{canUnlock && (
+																<Button 
+																	size="small" 
+																	onClick={() => handleUnlockMap(map.id)}
+																	style={{ marginTop: '8px', width: '100%' }}
+																>
+																	🔓 解锁地图
+																</Button>
+															)}
+														</>
+													)}
+												
+												{canSwitch && (
+													<Button 
+														size="small" 
+														onClick={() => handleSwitchMap(map.id)}
+														style={{ marginTop: '8px', width: '100%' }}
+													>
+														切换到此地图
+													</Button>
+												)}
+											</div>
+										);
+									})}
+								</div>
+							</div>
+						</div>
+					</div>
 				</div>
 			)}
 

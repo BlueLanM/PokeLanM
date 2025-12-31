@@ -123,34 +123,42 @@ export const getPlayerInfo = async(req, res) => {
 	}
 };
 
-// 探索 - 遇到随机宝可梦
+// 探索 - 遇到随机宝可梦（根据当前地图）
 export const explore = async(req, res) => {
 	try {
 		if (pokemonData.length === 0) {
 			return res.status(500).json({ error: "宝可梦数据未加载" });
 		}
 
-		const { playerLevel } = req.body; // 接收玩家宝可梦等级
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const { playerId, playerLevel } = req.body; // 接收玩家ID和宝可梦等级
+
+		// 获取玩家当前地图
+		const player = await GameModel.getPlayer(playerId);
+		const currentMapId = player?.current_map_id || 1;
+		const currentMap = await GameModel.getMap(currentMapId);
+
+		if (!currentMap) {
+			return res.status(500).json({ error: "地图不存在" });
+		}
 
 		// 随机选择一只宝可梦（全部世代）
 		const randomIndex = Math.floor(Math.random() * pokemonData.length);
 		const pokemonInfo = pokemonData[randomIndex];
 
-		// 根据玩家等级动态调整野生宝可梦等级和属性
-		const basePlayerLevel = playerLevel || 5;
-		// 野生宝可梦等级略低于玩家，范围：玩家等级的70%-90%
-		const wildLevel = Math.max(1, Math.floor(basePlayerLevel * (0.7 + Math.random() * 0.2)));
+		// 根据地图等级范围生成野生宝可梦等级
+		const minLevel = currentMap.min_level;
+		const maxLevel = currentMap.max_level;
+		const wildLevel = Math.floor(Math.random() * (maxLevel - minLevel + 1)) + minLevel;
 
 		// 基于等级计算血量和攻击力
-		// HP = 基础值 + 等级加成（降低成长率）
 		const baseHp = 25;
-		const hpPerLevel = 3; // 每级增加3点HP（从5降到3）
-		const maxHp = baseHp + (wildLevel * hpPerLevel) + Math.floor(Math.random() * 15); // 随机性也降低
+		const hpPerLevel = 3;
+		const maxHp = baseHp + (wildLevel * hpPerLevel) + Math.floor(Math.random() * 15);
 
-		// 攻击力也根据等级调整（降低攻击力）
 		const baseAttack = 3;
-		const attackPerLevel = 1.5; // 每级增加1.5点攻击（从2降到1.5）
-		const attack = Math.floor(baseAttack + (wildLevel * attackPerLevel) + Math.random() * 3); // 随机性降低
+		const attackPerLevel = 1.5;
+		const attack = Math.floor(baseAttack + (wildLevel * attackPerLevel) + Math.random() * 3);
 
 		const pokemon = {
 			attack,
@@ -168,7 +176,11 @@ export const explore = async(req, res) => {
 		};
 
 		res.json({
-			message: `遇到了野生的 ${pokemon.name}！(Lv.${wildLevel})`,
+			currentMap: {
+				id: currentMap.id,
+				name: currentMap.name
+			},
+			message: `在 ${currentMap.name} 遇到了野生的 ${pokemon.name}！(Lv.${wildLevel})`,
 			pokemon,
 			success: true
 		});
@@ -864,6 +876,152 @@ export const adminDeleteGym = async(req, res) => {
 		const { id } = req.params;
 
 		const result = await GameModel.deleteGym(id);
+
+		if (result.success) {
+			res.json({
+				message: "删除成功",
+				success: true
+			});
+		} else {
+			res.status(400).json({ error: result.message });
+		}
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+// ========== 地图系统 ==========
+
+// 获取所有地图
+export const getAllMaps = async(req, res) => {
+	try {
+		const maps = await GameModel.getAllMaps();
+		res.json({ maps, success: true });
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+// 获取玩家地图状态
+export const getPlayerMapsStatus = async(req, res) => {
+	try {
+		const { playerId } = req.params;
+		const mapsStatus = await GameModel.getPlayerMapsStatus(playerId);
+		res.json({ maps: mapsStatus, success: true });
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+// 解锁地图
+export const unlockMap = async(req, res) => {
+	try {
+		const { playerId, mapId } = req.body;
+		const result = await GameModel.unlockMap(playerId, mapId);
+
+		if (result.success) {
+			res.json({
+				message: result.message,
+				success: true
+			});
+		} else {
+			res.status(400).json({ error: result.message });
+		}
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+// 切换当前地图
+export const switchMap = async(req, res) => {
+	try {
+		const { playerId, mapId } = req.body;
+		const result = await GameModel.switchMap(playerId, mapId);
+
+		if (result.success) {
+			res.json({
+				map: result.map,
+				message: result.message,
+				success: true
+			});
+		} else {
+			res.status(400).json({ error: result.message });
+		}
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+// 管理员 - 获取单个地图
+export const adminGetMap = async(req, res) => {
+	try {
+		const { id } = req.params;
+		const map = await GameModel.getMap(id);
+		if (!map) {
+			return res.status(404).json({ error: "地图不存在" });
+		}
+		res.json({ data: map, success: true });
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+// 管理员 - 添加地图
+export const adminAddMap = async(req, res) => {
+	try {
+		const mapData = req.body;
+
+		if (!mapData.name || !mapData.min_level || !mapData.max_level) {
+			return res.status(400).json({ error: "地图名称、最小等级和最大等级不能为空" });
+		}
+
+		const result = await GameModel.addMap(mapData);
+
+		if (result.success) {
+			res.json({
+				id: result.id,
+				message: "添加成功",
+				success: true
+			});
+		} else {
+			res.status(400).json({ error: result.message });
+		}
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+// 管理员 - 更新地图
+export const adminUpdateMap = async(req, res) => {
+	try {
+		const { id } = req.params;
+		const mapData = req.body;
+
+		if (!mapData.name || !mapData.min_level || !mapData.max_level) {
+			return res.status(400).json({ error: "地图名称、最小等级和最大等级不能为空" });
+		}
+
+		const result = await GameModel.updateMap(id, mapData);
+
+		if (result.success) {
+			res.json({
+				message: "更新成功",
+				success: true
+			});
+		} else {
+			res.status(400).json({ error: result.message });
+		}
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+// 管理员 - 删除地图
+export const adminDeleteMap = async(req, res) => {
+	try {
+		const { id } = req.params;
+
+		const result = await GameModel.deleteMap(id);
 
 		if (result.success) {
 			res.json({

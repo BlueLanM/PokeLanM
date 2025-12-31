@@ -59,4 +59,17 @@ router.post("/game/admin/gym", gameController.adminAddGym);
 router.put("/game/admin/gym/:id", gameController.adminUpdateGym);
 router.delete("/game/admin/gym/:id", gameController.adminDeleteGym);
 
+// 地图系统
+router.get("/game/maps", gameController.getAllMaps);
+router.get("/game/maps/:playerId", gameController.getPlayerMapsStatus);
+router.post("/game/maps/unlock", gameController.unlockMap);
+router.post("/game/maps/switch", gameController.switchMap);
+
+// 管理员 - 地图管理
+router.get("/game/admin/maps", gameController.getAllMaps);
+router.get("/game/admin/map/:id", gameController.adminGetMap);
+router.post("/game/admin/map", gameController.adminAddMap);
+router.put("/game/admin/map/:id", gameController.adminUpdateMap);
+router.delete("/game/admin/map/:id", gameController.adminDeleteMap);
+
 export default router;

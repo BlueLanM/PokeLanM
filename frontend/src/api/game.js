@@ -10,8 +10,8 @@ export const getPlayerInfo = (playerId) => {
 };
 
 // 探索模块
-export const explore = (playerLevel) => {
-  return request.post("/game/explore", { playerLevel });
+export const explore = (playerId, playerLevel) => {
+  return request.post("/game/explore", { playerId, playerLevel });
 };
 
 export const selectStarter = (playerId, pokemon) => {
@@ -66,4 +66,21 @@ export const switchMainPokemon = (playerId, storagePokemonId) => {
 // 数据迁移
 export const migratePartyData = (playerId) => {
   return request.post("/game/migrate", { playerId });
+};
+
+// 地图系统
+export const getAllMaps = () => {
+  return request.get("/game/maps");
+};
+
+export const getPlayerMapsStatus = (playerId) => {
+  return request.get(`/game/maps/${playerId}`);
+};
+
+export const unlockMap = (playerId, mapId) => {
+  return request.post("/game/maps/unlock", { playerId, mapId });
+};
+
+export const switchMap = (playerId, mapId) => {
+  return request.post("/game/maps/switch", { playerId, mapId });
 };
