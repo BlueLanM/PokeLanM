@@ -4,6 +4,7 @@ import Tilt from 'react-parallax-tilt';
 import Message from "../../components/Message";
 import Button from "../../components/Button";
 import Modal from "../../components/Modal";
+import EvolutionModal from "../../components/EvolutionModal";
 import Pokedex from "../pokedex";
 import "./index.scss";
 
@@ -80,6 +81,9 @@ const PokemonGame = () => {
 	const [isSelectingStarter, setIsSelectingStarter] = useState(false); // 防止重复选择初始精灵
 	const [maps, setMaps] = useState([]); // 地图列表
 	const [currentMap, setCurrentMapState] = useState(null); // 当前地图
+	const [showEvolutionModal, setShowEvolutionModal] = useState(false); // 进化Modal
+	const [evolutionInfo, setEvolutionInfo] = useState(null); // 进化信息
+	const [evolvingPokemon, setEvolvingPokemon] = useState(null); // 正在进化的宝可梦
 
 	// 初始化或加载玩家
 	useEffect(() => {
@@ -500,6 +504,38 @@ const PokemonGame = () => {
 		}
 	};
 
+	// 检查宝可梦是否可以进化
+	const handleCheckEvolution = async (pokemon) => {
+		try {
+			const data = await gameAPI.checkPokemonEvolution(pokemon.id);
+			if (data.success) {
+				setEvolutionInfo(data);
+				setEvolvingPokemon(pokemon);
+				setShowEvolutionModal(true);
+			}
+		} catch (error) {
+			Message.error(error.error || "检查进化状态失败");
+		}
+	};
+
+	// 执行进化
+	const handleEvolvePokemon = async () => {
+		try {
+			const data = await gameAPI.evolvePokemon(evolvingPokemon.id, player.id);
+			if (data.success) {
+				Message.success(data.message);
+				setShowEvolutionModal(false);
+				setEvolutionInfo(null);
+				setEvolvingPokemon(null);
+				// 重新加载玩家数据
+				await loadPlayer(player.id);
+			}
+		} catch (error) {
+			Message.error(error.error || "进化失败");
+			setShowEvolutionModal(false);
+		}
+	};
+
 	// 如果没有玩家数据，显示加载中（正常情况下不会出现，因为已经通过登录界面）
 	if (!player) {
 		return (
@@ -887,6 +923,13 @@ const PokemonGame = () => {
 									<p>攻击: {playerParty[0].attack}</p>
 									<p>经验: {formatExpDisplay(playerParty[0].level_exp || 0, playerParty[0].level)}</p>
 									{playerParty[0].level >= 100 && <p className="max-level">⭐ 满级</p>}
+									<Button
+										size="small"
+										onClick={() => handleCheckEvolution(playerParty[0])}
+										style={{ marginTop: '10px', width: '100%' }}
+									>
+										✨ 查看进化
+									</Button>
 								</Tilt>
 						) : (
 							<p style={{ padding: "20px", textAlign: "center", color: "#999" }}>
@@ -896,6 +939,19 @@ const PokemonGame = () => {
 					</div>
 				</div>
 			)}
+
+			{/* 进化Modal */}
+			<EvolutionModal
+				visible={showEvolutionModal}
+				pokemon={evolvingPokemon}
+				evolutionInfo={evolutionInfo}
+				onConfirm={handleEvolvePokemon}
+				onCancel={() => {
+					setShowEvolutionModal(false);
+					setEvolutionInfo(null);
+					setEvolvingPokemon(null);
+				}}
+			/>
 
 			{currentView === "storage" && (
 				<div className="storage-view">
@@ -907,9 +963,9 @@ const PokemonGame = () => {
 								// 仓库使用正常图片
 								const normalSprite = pokemon.pokemon_sprite || `https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/detail/${pokemon.pokemon_id}.png`;
 								return (
-									<Tilt 
-										tiltMaxAngleX={15} 
-										tiltMaxAngleY={15} 
+									<Tilt
+										tiltMaxAngleX={5} 
+										tiltMaxAngleY={5} 
 										transitionSpeed={400} 
 										perspective={500} 
 										key={pokemon.id} 
@@ -917,6 +973,7 @@ const PokemonGame = () => {
 									>
 										<img src={normalSprite} alt={pokemon.pokemon_name} />
 										<h3>{pokemon.pokemon_name}</h3>
+										<p>等级: Lv.{pokemon.level}</p>
 										<p>HP: {pokemon.hp}/{pokemon.max_hp}</p>
 										<p>攻击: {pokemon.attack}</p>
 										<Button

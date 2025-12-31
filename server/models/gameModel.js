@@ -4,6 +4,15 @@ import pool from "../config/database.js";
 import bcrypt from "bcrypt";
 import * as GrowthRateService from "../services/growthRateService.js";
 
+// ========== 宝可梦进化系统 ==========
+
+/**
+ * 读取宝可梦进化链数据
+ */
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
 // 密码加密的盐值轮数
 const SALT_ROUNDS = 10;
 
@@ -1386,6 +1395,232 @@ export const deleteMap = async(id) => {
 		await pool.query("DELETE FROM maps WHERE id = ?", [id]);
 
 		return { success: true };
+	} catch (error) {
+		return { message: error.message, success: false };
+	}
+};
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+let pokemonData = [];
+try {
+	const dataPath = path.join(__dirname, "../pokedex-main/pokemon.json");
+	const rawData = fs.readFileSync(dataPath, "utf8");
+	pokemonData = JSON.parse(rawData);
+} catch (error) {
+	console.error("❌ 读取宝可梦数据失败:", error);
+}
+
+/**
+ * 获取宝可梦的进化信息
+ * @param {number} pokemonId - 当前宝可梦ID
+ * @returns {object} - 进化信息 { canEvolve, nextEvolution, evolutionChain, requiredLevel }
+ */
+export const getPokemonEvolutionInfo = (pokemonId) => {
+	const pokemon = pokemonData.find(p => p.id === pokemonId);
+
+	if (!pokemon || !pokemon.chain) {
+		return { canEvolve: false };
+	}
+
+	// 解析进化链 "1,2,3" -> [1, 2, 3]
+	const evolutionChain = pokemon.chain.split(",").map(id => parseInt(id.trim()));
+
+	// 找到当前宝可梦在进化链中的位置
+	const currentIndex = evolutionChain.indexOf(pokemonId);
+
+	if (currentIndex === -1 || currentIndex === evolutionChain.length - 1) {
+		// 不在进化链中或已经是最终形态
+		return {
+			canEvolve: false,
+			evolutionChain,
+			isMaxEvolution: true
+		};
+	}
+
+	// 下一个进化形态的ID
+	const nextEvolutionId = evolutionChain[currentIndex + 1];
+	const nextEvolution = pokemonData.find(p => p.id === nextEvolutionId);
+
+	// 进化等级要求（可以根据实际需求调整）
+	// 第一段进化：16级，第二段进化：36级
+	const requiredLevel = currentIndex === 0 ? 16 : 36;
+
+	return {
+		canEvolve: true,
+		currentStage: currentIndex + 1,
+		evolutionChain,
+		nextEvolution: {
+			id: nextEvolution.id,
+			name: nextEvolution.name,
+			name_en: nextEvolution.name_en,
+			sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${nextEvolution.id}.png`
+		},
+		requiredLevel,
+		totalStages: evolutionChain.length
+	};
+};
+
+/**
+ * 执行宝可梦进化
+ * @param {number} partyId - 背包中宝可梦的ID
+ * @returns {object} - 进化结果
+ */
+export const evolvePokemon = async(partyId, playerId = null) => {
+	try {
+		// 获取当前宝可梦信息
+		let query = "SELECT * FROM player_party WHERE id = ?";
+		let params = [partyId];
+
+		// 如果提供了playerId，验证所有权
+		if (playerId) {
+			query = "SELECT * FROM player_party WHERE id = ? AND player_id = ?";
+			params = [partyId, playerId];
+		}
+
+		const [pokemon] = await pool.query(query, params);
+
+		if (pokemon.length === 0) {
+			return { message: playerId ? "宝可梦不存在或无权操作" : "宝可梦不存在", success: false };
+		}
+
+		const poke = pokemon[0];
+		console.log("🔍 进化检查 - 宝可梦:", poke.pokemon_name, "ID:", poke.pokemon_id, "等级:", poke.level);
+
+		const evolutionInfo = getPokemonEvolutionInfo(poke.pokemon_id);
+		console.log("🔍 进化信息:", JSON.stringify(evolutionInfo, null, 2));
+
+		// 检查是否可以进化
+		if (!evolutionInfo.canEvolve) {
+			return {
+				message: `${poke.pokemon_name} 已经是最终形态，无法进化！`,
+				success: false
+			};
+		}
+
+		// 检查等级是否满足
+		if (poke.level < evolutionInfo.requiredLevel) {
+			return {
+				message: `${poke.pokemon_name} 需要达到 ${evolutionInfo.requiredLevel} 级才能进化！当前等级：${poke.level}`,
+				success: false
+			};
+		}
+
+		// 获取进化后的宝可梦数据
+		const nextEvolution = evolutionInfo.nextEvolution;
+
+		if (!nextEvolution || !nextEvolution.id) {
+			console.error("❌ 进化数据错误:", nextEvolution);
+			return {
+				message: "进化数据异常，请联系管理员",
+				success: false
+			};
+		}
+
+		console.log("✅ 开始进化:", poke.pokemon_name, "->", nextEvolution.name);
+
+		// 计算属性增长（进化时属性提升）
+		const hpBonus = 20;
+		const attackBonus = 10;
+
+		// 更新为进化后的宝可梦
+		await pool.query(
+			`UPDATE player_party 
+       SET pokemon_id = ?, 
+           pokemon_name = ?, 
+           pokemon_sprite = ?,
+           max_hp = max_hp + ?,
+           hp = hp + ?,
+           attack = attack + ?
+       WHERE id = ?`,
+			[
+				nextEvolution.id,
+				nextEvolution.name,
+				nextEvolution.sprite,
+				hpBonus,
+				hpBonus,
+				attackBonus,
+				partyId
+			]
+		);
+
+		// 添加到图鉴（如果是新宝可梦）
+		await addToPokedex(poke.player_id, {
+			id: nextEvolution.id,
+			name: nextEvolution.name,
+			name_en: nextEvolution.name_en,
+			sprite: nextEvolution.sprite
+		});
+
+		return {
+			evolution: {
+				bonusStats: {
+					attack: attackBonus,
+					hp: hpBonus
+				},
+				from: {
+					id: poke.pokemon_id,
+					name: poke.pokemon_name
+				},
+				to: {
+					id: nextEvolution.id,
+					name: nextEvolution.name,
+					sprite: nextEvolution.sprite
+				}
+			},
+			message: `恭喜！${poke.pokemon_name} 进化成了 ${nextEvolution.name}！`,
+			success: true
+		};
+	} catch (error) {
+		console.error("进化失败:", error);
+		return { message: error.message, success: false };
+	}
+};
+
+/**
+ * 检查宝可梦是否可以进化（用于前端显示）
+ * @param {number} partyId - 背包中宝可梦的ID
+ * @returns {object} - 进化检查结果
+ */
+export const checkEvolution = async(partyId) => {
+	try {
+		const [pokemon] = await pool.query(
+			"SELECT * FROM player_party WHERE id = ?",
+			[partyId]
+		);
+
+		if (pokemon.length === 0) {
+			return { message: "宝可梦不存在", success: false };
+		}
+
+		const poke = pokemon[0];
+		const evolutionInfo = getPokemonEvolutionInfo(poke.pokemon_id);
+
+		if (!evolutionInfo.canEvolve) {
+			return {
+				canEvolve: false,
+				isMaxEvolution: true,
+				message: `${poke.pokemon_name} 已经是最终形态`,
+				success: true
+			};
+		}
+
+		const canEvolveNow = poke.level >= evolutionInfo.requiredLevel;
+
+		return {
+			canEvolve: evolutionInfo.canEvolve,
+			canEvolveNow,
+			currentLevel: poke.level,
+			currentStage: evolutionInfo.currentStage,
+			message: canEvolveNow
+				? `${poke.pokemon_name} 可以进化成 ${evolutionInfo.nextEvolution.name}！`
+				: `${poke.pokemon_name} 还需要 ${evolutionInfo.requiredLevel - poke.level} 级才能进化`,
+			nextEvolution: evolutionInfo.nextEvolution,
+			requiredLevel: evolutionInfo.requiredLevel,
+			success: true,
+			totalStages: evolutionInfo.totalStages
+		};
 	} catch (error) {
 		return { message: error.message, success: false };
 	}

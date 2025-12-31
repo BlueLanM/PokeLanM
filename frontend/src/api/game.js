@@ -97,3 +97,12 @@ export const getExpForLevel = (level) => {
 export const getLevelFromExp = (exp) => {
   return request.get(`/game/level-from-exp/${exp}`);
 };
+
+// 宝可梦进化系统
+export const checkPokemonEvolution = (partyId) => {
+  return request.get(`/game/evolution/check/${partyId}`);
+};
+
+export const evolvePokemon = (partyId, playerId) => {
+  return request.post(`/game/evolution/evolve/${partyId}`, { playerId });
+};

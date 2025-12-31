@@ -1259,3 +1259,58 @@ export const getLevelFromExp = async(req, res) => {
 		res.status(500).json({ error: error.message });
 	}
 };
+
+// ========== 宝可梦进化相关 ==========
+
+// 检查宝可梦是否可以进化
+export const checkPokemonEvolution = async(req, res) => {
+	try {
+		const { partyId } = req.params;
+
+		if (!partyId) {
+			return res.status(400).json({ error: "缺少宝可梦ID" });
+		}
+
+		const result = await GameModel.checkEvolution(parseInt(partyId));
+
+		if (!result.success) {
+			return res.status(400).json({ error: result.message });
+		}
+
+		res.json(result);
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+// 执行宝可梦进化
+export const evolvePokemon = async(req, res) => {
+	try {
+		const { partyId } = req.params;
+		const { playerId } = req.body;
+
+		console.log("🎮 进化请求 - partyId:", partyId, "playerId:", playerId);
+
+		if (!partyId) {
+			return res.status(400).json({ error: "缺少宝可梦ID" });
+		}
+
+		if (!playerId) {
+			return res.status(400).json({ error: "缺少玩家ID" });
+		}
+
+		// 验证宝可梦是否属于该玩家（通过Model函数）
+		const result = await GameModel.evolvePokemon(parseInt(partyId), parseInt(playerId));
+
+		console.log("✅ 进化结果:", result);
+
+		if (!result.success) {
+			return res.status(400).json({ error: result.message });
+		}
+
+		res.json(result);
+	} catch (error) {
+		console.error("❌ 进化接口错误:", error);
+		res.status(500).json({ error: error.message });
+	}
+};

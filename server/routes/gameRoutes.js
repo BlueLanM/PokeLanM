@@ -80,4 +80,8 @@ router.get("/game/exp-table", gameController.getExpTable);
 router.get("/game/exp-for-level/:level", gameController.getExpForLevel);
 router.get("/game/level-from-exp/:exp", gameController.getLevelFromExp);
 
+// 宝可梦进化系统
+router.get("/game/evolution/check/:partyId", gameController.checkPokemonEvolution);
+router.post("/game/evolution/evolve/:partyId", gameController.evolvePokemon);
+
 export default router;
