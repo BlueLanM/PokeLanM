@@ -1455,7 +1455,7 @@ export const getPokemonEvolutionInfo = (pokemonId) => {
 			id: nextEvolution.id,
 			name: nextEvolution.name,
 			name_en: nextEvolution.name_en,
-			sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${nextEvolution.id}.png`
+			sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/${nextEvolution.id}.png`
 		},
 		requiredLevel,
 		totalStages: evolutionChain.length
