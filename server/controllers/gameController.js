@@ -285,17 +285,25 @@ export const catchPokemon = async(req, res) => {
 			// 尝试加入背包
 			const partyId = await GameModel.addToParty(playerId, pokemon);
 
-			// 计算捕捉经验值奖励 (基于野生宝可梦等级)
+			// 获取玩家当前地图的奖励倍率
+			const player = await GameModel.getPlayer(playerId);
+			const currentMapId = player?.current_map_id || 1;
+			const currentMap = await GameModel.getMap(currentMapId);
+			const rewardMultiplier = currentMap?.reward_multiplier || 1.0;
+
+			// 计算捕捉经验值奖励 (基于野生宝可梦等级和地图倍率)
 			let expResult = null;
 			if (playerPokemonId) {
 				const wildLevel = pokemon.level || 10;
-				const expGained = wildLevel * 15; // 捕捉获得的经验值略少于击败
+				const baseExp = wildLevel * 15; // 捕捉获得的经验值略少于击败
+				const expGained = Math.floor(baseExp * rewardMultiplier);
 				expResult = await GameModel.addExpToPokemon(playerPokemonId, expGained);
 			}
 
-			// 计算捕捉金币奖励 (基于野生宝可梦等级)
+			// 计算捕捉金币奖励 (基于野生宝可梦等级和地图倍率)
 			const wildLevel = pokemon.level || 10;
-			const catchReward = Math.floor(wildLevel * 10 + Math.random() * 20 + 10); // 等级*10 + 10-30随机金币
+			const baseMoney = Math.floor(wildLevel * 10 + Math.random() * 20 + 10);
+			const catchReward = Math.floor(baseMoney * rewardMultiplier);
 			await GameModel.updatePlayerMoney(playerId, catchReward);
 
 			if (partyId) {
@@ -374,11 +382,36 @@ export const attack = async(req, res) => {
 
 		if (enemyPokemon.hp <= 0) {
 			enemyPokemon.hp = 0;
-			const reward = isGym ? enemyPokemon.reward_money || 500 : Math.floor(Math.random() * 50) + 50;
 
-			// 计算经验值奖励 (基于敌人等级)
+			// 获取玩家当前地图的奖励倍率（只对野生宝可梦战斗生效）
+			const playerId = playerPokemon.player_id;
+			let rewardMultiplier = 1.0;
+
+			if (!isGym && playerId) {
+				const player = await GameModel.getPlayer(playerId);
+				const currentMapId = player?.current_map_id || 1;
+				const currentMap = await GameModel.getMap(currentMapId);
+				rewardMultiplier = currentMap?.reward_multiplier || 1.0;
+			}
+
+			// 计算金币奖励（道馆固定奖励，野生宝可梦受地图倍率影响）
+			let reward;
+			if (isGym) {
+				reward = enemyPokemon.reward_money || 500;
+			} else {
+				const baseReward = Math.floor(Math.random() * 50) + 50;
+				reward = Math.floor(baseReward * rewardMultiplier);
+			}
+
+			// 计算经验值奖励（道馆固定，野生宝可梦受地图倍率影响）
 			const enemyLevel = enemyPokemon.level || 10;
-			const expGained = isGym ? enemyLevel * 50 : enemyLevel * 20; // 道馆给更多经验
+			let expGained;
+			if (isGym) {
+				expGained = enemyLevel * 50; // 道馆给更多经验，不受地图影响
+			} else {
+				const baseExp = enemyLevel * 20;
+				expGained = Math.floor(baseExp * rewardMultiplier);
+			}
 
 			// 给玩家宝可梦添加经验值
 			const expResult = await GameModel.addExpToPokemon(playerPokemon.id, expGained);
@@ -387,8 +420,6 @@ export const attack = async(req, res) => {
 			await GameModel.restorePokemonHp(playerPokemon.id);
 
 			// 更新玩家金币（添加奖励金币到数据库）
-			// 从数据库获取该宝可梦对应的玩家ID
-			const playerId = playerPokemon.player_id;
 			if (playerId) {
 				await GameModel.updatePlayerMoney(playerId, reward);
 			}
