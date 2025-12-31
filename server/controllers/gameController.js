@@ -1289,8 +1289,6 @@ export const evolvePokemon = async(req, res) => {
 		const { partyId } = req.params;
 		const { playerId } = req.body;
 
-		console.log("🎮 进化请求 - partyId:", partyId, "playerId:", playerId);
-
 		if (!partyId) {
 			return res.status(400).json({ error: "缺少宝可梦ID" });
 		}
@@ -1301,8 +1299,6 @@ export const evolvePokemon = async(req, res) => {
 
 		// 验证宝可梦是否属于该玩家（通过Model函数）
 		const result = await GameModel.evolvePokemon(parseInt(partyId), parseInt(playerId));
-
-		console.log("✅ 进化结果:", result);
 
 		if (!result.success) {
 			return res.status(400).json({ error: result.message });

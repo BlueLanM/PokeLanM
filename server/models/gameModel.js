@@ -1486,10 +1486,8 @@ export const evolvePokemon = async(partyId, playerId = null) => {
 		}
 
 		const poke = pokemon[0];
-		console.log("🔍 进化检查 - 宝可梦:", poke.pokemon_name, "ID:", poke.pokemon_id, "等级:", poke.level);
 
 		const evolutionInfo = getPokemonEvolutionInfo(poke.pokemon_id);
-		console.log("🔍 进化信息:", JSON.stringify(evolutionInfo, null, 2));
 
 		// 检查是否可以进化
 		if (!evolutionInfo.canEvolve) {
@@ -1517,8 +1515,6 @@ export const evolvePokemon = async(partyId, playerId = null) => {
 				success: false
 			};
 		}
-
-		console.log("✅ 开始进化:", poke.pokemon_name, "->", nextEvolution.name);
 
 		// 计算属性增长（进化时属性提升）
 		const hpBonus = 20;
