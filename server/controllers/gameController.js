@@ -878,15 +878,15 @@ export const adminGetGyms = async(req, res) => {
 export const exportGyms = async(req, res) => {
 	try {
 		const gyms = await GameModel.getAllGyms();
-		
+
 		// 设置响应头，让浏览器下载文件
-		res.setHeader('Content-Type', 'application/json');
-		res.setHeader('Content-Disposition', `attachment; filename=gyms-export-${Date.now()}.json`);
-		
+		res.setHeader("Content-Type", "application/json");
+		res.setHeader("Content-Disposition", `attachment; filename=gyms-export-${Date.now()}.json`);
+
 		res.json({
+			data: gyms,
 			exportDate: new Date().toISOString(),
-			totalCount: gyms.length,
-			data: gyms
+			totalCount: gyms.length
 		});
 	} catch (error) {
 		res.status(500).json({ error: error.message });
@@ -896,29 +896,29 @@ export const exportGyms = async(req, res) => {
 // 导入道馆数据
 export const importGyms = async(req, res) => {
 	try {
-		const { gyms, mode = 'merge' } = req.body; // mode: 'merge'(合并) 或 'replace'(替换)
-		
+		const { gyms, mode = "merge" } = req.body; // mode: 'merge'(合并) 或 'replace'(替换)
+
 		if (!Array.isArray(gyms) || gyms.length === 0) {
 			return res.status(400).json({ error: "导入数据格式错误或为空" });
 		}
-		
+
 		let successCount = 0;
 		let errorCount = 0;
 		const errors = [];
-		
+
 		// 如果是替换模式，先删除所有现有道馆（可选，根据需求）
 		// 注意：这里不删除，以避免数据丢失风险
-		
+
 		// 遍历导入的道馆数据
 		for (const gym of gyms) {
 			try {
 				// 验证必填字段
 				if (!gym.name || !gym.leader_name || !gym.badge_name) {
 					errorCount++;
-					errors.push(`道馆 "${gym.name || '未知'}" 缺少必填字段`);
+					errors.push(`道馆 "${gym.name || "未知"}" 缺少必填字段`);
 					continue;
 				}
-				
+
 				// 检查是否已存在相同ID的道馆
 				if (gym.id) {
 					const existing = await GameModel.getGym(gym.id);
@@ -955,16 +955,16 @@ export const importGyms = async(req, res) => {
 				}
 			} catch (error) {
 				errorCount++;
-				errors.push(`处理道馆 "${gym.name || '未知'}" 时出错: ${error.message}`);
+				errors.push(`处理道馆 "${gym.name || "未知"}" 时出错: ${error.message}`);
 			}
 		}
-		
+
 		res.json({
-			success: true,
-			message: `导入完成！成功: ${successCount}, 失败: ${errorCount}`,
-			successCount,
 			errorCount,
-			errors: errors.length > 0 ? errors : undefined
+			errors: errors.length > 0 ? errors : undefined,
+			message: `导入完成！成功: ${successCount}, 失败: ${errorCount}`,
+			success: true,
+			successCount
 		});
 	} catch (error) {
 		res.status(500).json({ error: error.message });
