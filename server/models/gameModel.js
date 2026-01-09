@@ -874,6 +874,12 @@ export const addExpToPokemon = async(partyId, expGained) => {
 // 添加到图鉴（捕获新宝可梦时调用）
 export const addToPokedex = async(playerId, pokemon) => {
 	try {
+		// 验证必填字段
+		if (!pokemon.id || !pokemon.name) {
+			console.error("pokemon数据不完整:", pokemon);
+			throw new Error("宝可梦数据缺少必填字段（id或name）");
+		}
+
 		// 检查是否已有该宝可梦
 		const [existing] = await pool.query(
 			"SELECT * FROM player_pokedex WHERE player_id = ? AND pokemon_id = ?",
@@ -888,12 +894,27 @@ export const addToPokedex = async(playerId, pokemon) => {
 			);
 			return { isNew: false };
 		} else {
+			// 确保所有字段都有值
+			const pokemonName = pokemon.name || "未知宝可梦";
+			const pokemonNameEn = pokemon.name_en || pokemon.name || "Unknown";
+			const pokemonSprite = pokemon.sprite || "";
+
+			console.log("准备插入图鉴:", {
+				playerId,
+				pokemonId: pokemon.id,
+				pokemonName,
+				pokemonNameEn,
+				pokemonSprite
+			});
+
 			// 新发现，插入记录
 			await pool.query(
 				`INSERT INTO player_pokedex (player_id, pokemon_id, pokemon_name, pokemon_name_en, pokemon_sprite, total_caught)
 				 VALUES (?, ?, ?, ?, ?, 1)`,
-				[playerId, pokemon.id, pokemon.name, pokemon.name_en || pokemon.name, pokemon.sprite]
+				[playerId, pokemon.id, pokemonName, pokemonNameEn, pokemonSprite]
 			);
+
+			console.log("图鉴插入成功");
 
 			// 检查是否完成全图鉴（可能失败，但不影响主流程）
 			try {
