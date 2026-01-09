@@ -1306,7 +1306,7 @@ export const evolvePokemon = async(req, res) => {
 
 		res.json(result);
 	} catch (error) {
-		console.error("❌ 进化接口错误:", error);
+		console.error("进化接口错误:", error);
 		res.status(500).json({ error: error.message });
 	}
 };

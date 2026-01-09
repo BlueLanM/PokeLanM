@@ -18,6 +18,14 @@ const SALT_ROUNDS = 10;
 
 // 初始化游戏数据表
 export const initGameTables = async() => {
+	const DB_TYPE = process.env.DB_TYPE || "mysql";
+
+	// MySQL 模式下跳过初始化（假设表已存在）
+	if (DB_TYPE === "mysql") {
+		return;
+	}
+
+	// PostgreSQL 模式：执行完整的表初始化
 	const client = await pool.connect();
 	try {
 		// 玩家表
@@ -288,10 +296,8 @@ export const initGameTables = async() => {
       SELECT id, 1 FROM players
       ON CONFLICT DO NOTHING
     `);
-
-		console.log("✅ Game tables initialized successfully");
 	} catch (error) {
-		console.error("❌ Error initializing game tables:", error);
+		console.error("Error initializing game tables:", error);
 		throw error;
 	} finally {
 		client.release();
@@ -304,20 +310,23 @@ export const registerPlayer = async(name, password) => {
 	const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
 	const [result] = await pool.query(
-		"INSERT INTO players (name, password, money, pokemon_caught, gyms_defeated, current_map_id) VALUES (?, ?, 1000, 0, 0, 1)",
+		"INSERT INTO players (name, password, money, pokemon_caught, gyms_defeated) VALUES (?, ?, 1000, 0, 0) RETURNING id",
 		[name, hashedPassword]
 	);
+
+	const playerId = result[0].id;
+
 	// 给新玩家初始物品
 	await pool.query(
 		"INSERT INTO player_items (player_id, pokeball_type_id, quantity) VALUES (?, 1, 5)",
-		[result.insertId]
+		[playerId]
 	);
 	// 给新玩家解锁第一个地图
 	await pool.query(
 		"INSERT INTO player_map_unlocks (player_id, map_id) VALUES (?, 1)",
-		[result.insertId]
+		[playerId]
 	);
-	return result.insertId;
+	return playerId;
 };
 
 // 玩家登录验证（使用 bcrypt 比对密码）
@@ -618,35 +627,84 @@ export const buyPokeball = async(playerId, pokeballTypeId, quantity) => {
 
 // 数据迁移：将多余的背包精灵移到仓库(只保留position=1的)
 export const migrateExtraPartyToStorage = async(playerId) => {
+	const DB_TYPE = process.env.DB_TYPE || "mysql";
+	let connection;
+
 	try {
-		await pool.query("START TRANSACTION");
+		// 获取数据库连接（支持事务）
+		if (DB_TYPE === "mysql") {
+			connection = await pool.getConnection();
+			await connection.beginTransaction();
+		} else {
+			connection = await pool.connect();
+			await connection.query("BEGIN");
+		}
 
 		// 获取所有背包中position>1的精灵
-		const [extraPokemon] = await pool.query(
-			"SELECT * FROM player_party WHERE player_id = ? AND position > 1",
-			[playerId]
-		);
+		const extraPokemon = DB_TYPE === "mysql"
+			? (await connection.execute(
+				"SELECT * FROM player_party WHERE player_id = ? AND position > 1",
+				[playerId]
+			))[0]
+			: (await connection.query(
+				"SELECT * FROM player_party WHERE player_id = $1 AND position > 1",
+				[playerId]
+			)).rows;
 
 		// 将它们移到仓库
 		for (const pokemon of extraPokemon) {
-			await pool.query(
-				`INSERT INTO player_storage (player_id, pokemon_id, pokemon_name, pokemon_sprite, level, hp, max_hp, attack)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-				[playerId, pokemon.pokemon_id, pokemon.pokemon_name,
-					pokemon.pokemon_sprite, pokemon.level,
-					pokemon.hp, pokemon.max_hp, pokemon.attack]
-			);
-
-			await pool.query(
-				"DELETE FROM player_party WHERE id = ?",
-				[pokemon.id]
-			);
+			if (DB_TYPE === "mysql") {
+				await connection.execute(
+					`INSERT INTO player_storage (player_id, pokemon_id, pokemon_name, pokemon_sprite, level, hp, max_hp, attack)
+					 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+					[playerId, pokemon.pokemon_id, pokemon.pokemon_name,
+						pokemon.pokemon_sprite, pokemon.level,
+						pokemon.hp, pokemon.max_hp, pokemon.attack]
+				);
+				await connection.execute(
+					"DELETE FROM player_party WHERE id = ?",
+					[pokemon.id]
+				);
+			} else {
+				await connection.query(
+					`INSERT INTO player_storage (player_id, pokemon_id, pokemon_name, pokemon_sprite, level, hp, max_hp, attack)
+					 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+					[playerId, pokemon.pokemon_id, pokemon.pokemon_name,
+						pokemon.pokemon_sprite, pokemon.level,
+						pokemon.hp, pokemon.max_hp, pokemon.attack]
+				);
+				await connection.query(
+					"DELETE FROM player_party WHERE id = $1",
+					[pokemon.id]
+				);
+			}
 		}
 
-		await pool.query("COMMIT");
+		// 提交事务
+		if (DB_TYPE === "mysql") {
+			await connection.commit();
+			connection.release();
+		} else {
+			await connection.query("COMMIT");
+			connection.release();
+		}
+
 		return { message: `已将 ${extraPokemon.length} 只精灵移到仓库`, success: true };
 	} catch (error) {
-		await pool.query("ROLLBACK");
+		// 回滚事务
+		if (connection) {
+			try {
+				if (DB_TYPE === "mysql") {
+					await connection.rollback();
+					connection.release();
+				} else {
+					await connection.query("ROLLBACK");
+					connection.release();
+				}
+			} catch (rollbackError) {
+				console.error("Rollback error:", rollbackError);
+			}
+		}
 		return { message: error.message, success: false };
 	}
 };
@@ -1357,7 +1415,7 @@ try {
 	const rawData = fs.readFileSync(dataPath, "utf8");
 	pokemonData = JSON.parse(rawData);
 } catch (error) {
-	console.error("❌ 读取宝可梦数据失败:", error);
+	console.error("读取宝可梦数据失败:", error);
 }
 
 /**
@@ -1472,7 +1530,7 @@ export const evolvePokemon = async(partyId, playerId = null) => {
 		const nextEvolution = evolutionInfo.nextEvolution;
 
 		if (!nextEvolution || !nextEvolution.id) {
-			console.error("❌ 进化数据错误:", nextEvolution);
+			console.error("进化数据错误:", nextEvolution);
 			return {
 				message: "进化数据异常，请联系管理员",
 				success: false
@@ -1482,8 +1540,6 @@ export const evolvePokemon = async(partyId, playerId = null) => {
 		// 计算属性增长（进化时属性提升）
 		const hpBonus = 20;
 		const attackBonus = 10;
-
-		console.log("✅ 开始进化:", poke.pokemon_name, "->", nextEvolution.name, "表:", tableName);
 
 		// 更新为进化后的宝可梦 (使用动态表名)
 		await pool.query(

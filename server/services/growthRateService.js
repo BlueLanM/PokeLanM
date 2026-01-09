@@ -34,14 +34,11 @@ export const fetchGrowthRateData = async(growthRateId = 2) => {
 		growthRateCache = data;
 		lastFetchTime = Date.now();
 
-		console.log(`已获取增长率数据: ${data.name}, 包含 ${data.levels.length} 个等级`);
-
 		return data;
 	} catch (error) {
 		console.error("获取 PokeAPI 增长率数据失败:", error.message);
 		// 如果有缓存，返回缓存数据
 		if (growthRateCache) {
-			console.log("使用缓存的增长率数据");
 			return growthRateCache;
 		}
 		throw error;
@@ -191,8 +188,7 @@ export const getExpTable = async(minLevel = 1, maxLevel = 100) => {
 export const preloadGrowthRateData = async() => {
 	try {
 		await fetchGrowthRateData();
-		console.log("✓ 增长率数据预加载成功");
 	} catch (error) {
-		console.warn("⚠ 增长率数据预加载失败，将在使用时重试:", error.message);
+		console.warn("增长率数据预加载失败，将在使用时重试:", error.message);
 	}
 };
