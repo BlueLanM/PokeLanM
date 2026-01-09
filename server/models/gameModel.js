@@ -18,180 +18,143 @@ const SALT_ROUNDS = 10;
 
 // 初始化游戏数据表
 export const initGameTables = async() => {
-	const connection = await pool.getConnection();
+	const client = await pool.connect();
 	try {
 		// 玩家表
-		await connection.query(`
+		await client.query(`
       CREATE TABLE IF NOT EXISTS players (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         name VARCHAR(50) NOT NULL UNIQUE,
         password VARCHAR(255) NOT NULL,
-        money INT DEFAULT 1000,
-        pokemon_caught INT DEFAULT 0,
-        gyms_defeated INT DEFAULT 0,
+        money INTEGER DEFAULT 1000,
+        pokemon_caught INTEGER DEFAULT 0,
+        gyms_defeated INTEGER DEFAULT 0,
+        is_admin BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-		// 修改密码字段长度（确保足够存储bcrypt哈希）
-		try {
-			await connection.query(`
-        ALTER TABLE players 
-        MODIFY COLUMN password VARCHAR(255) NOT NULL
-      `);
-		} catch (err) {
-		}
+		// 创建触发器函数来自动更新 updated_at
+		await client.query(`
+      CREATE OR REPLACE FUNCTION update_updated_at_column()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        NEW.updated_at = CURRENT_TIMESTAMP;
+        RETURN NEW;
+      END;
+      $$ language 'plpgsql';
+    `);
 
-		// 添加统计字段
-		try {
-			await connection.query(`
-        ALTER TABLE players 
-        ADD COLUMN pokemon_caught INT DEFAULT 0,
-        ADD COLUMN gyms_defeated INT DEFAULT 0
-      `);
-		} catch (err) {
-			// 字段已存在，忽略错误
-		}
-
-		// 添加管理员字段
-		try {
-			await connection.query(`
-        ALTER TABLE players 
-        ADD COLUMN is_admin BOOLEAN DEFAULT FALSE
-      `);
-		} catch (err) {
-			// 字段已存在，忽略错误
-		}
+		// 创建触发器
+		await client.query(`
+      DROP TRIGGER IF EXISTS update_players_updated_at ON players;
+      CREATE TRIGGER update_players_updated_at
+      BEFORE UPDATE ON players
+      FOR EACH ROW
+      EXECUTE FUNCTION update_updated_at_column();
+    `);
 
 		// 精灵球类型表
-		await connection.query(`
+		await client.query(`
       CREATE TABLE IF NOT EXISTS pokeball_types (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         name VARCHAR(50) NOT NULL,
         catch_rate DECIMAL(3,2) NOT NULL,
-        price INT NOT NULL,
+        price INTEGER NOT NULL,
         image VARCHAR(255)
       )
     `);
 
-		// 添加 image 字段（如果表已存在但没有该字段）
-		try {
-			await connection.query(`
-        ALTER TABLE pokeball_types 
-        ADD COLUMN image VARCHAR(255)
-      `);
-		} catch (err) {
-			// 字段已存在，忽略错误
-		}
-
-		// 插入初始精灵球数据
-		await connection.query(`
-      INSERT IGNORE INTO pokeball_types (id, name, catch_rate, price, image) VALUES
+		// 插入初始精灵球数据（使用 ON CONFLICT 替代 INSERT IGNORE）
+		await client.query(`
+      INSERT INTO pokeball_types (id, name, catch_rate, price, image) VALUES
       (1, '精灵球', 0.30, 100, 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'),
       (2, '超级球', 0.50, 300, 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/great-ball.png'),
       (3, '高级球', 0.70, 500, 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png'),
       (4, '大师球', 1.00, 10000, 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png')
+      ON CONFLICT (id) DO NOTHING
     `);
 
 		// 更新现有记录的图片（如果图片为空）
-		await connection.query(`
+		await client.query(`
       UPDATE pokeball_types SET image = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png' WHERE id = 1 AND (image IS NULL OR image = '')
     `);
-		await connection.query(`
+		await client.query(`
       UPDATE pokeball_types SET image = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/great-ball.png' WHERE id = 2 AND (image IS NULL OR image = '')
     `);
-		await connection.query(`
+		await client.query(`
       UPDATE pokeball_types SET image = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png' WHERE id = 3 AND (image IS NULL OR image = '')
     `);
-		await connection.query(`
+		await client.query(`
       UPDATE pokeball_types SET image = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png' WHERE id = 4 AND (image IS NULL OR image = '')
     `);
 
 		// 玩家背包表（最多6只）
-		await connection.query(`
+		await client.query(`
       CREATE TABLE IF NOT EXISTS player_party (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        player_id INT NOT NULL,
-        pokemon_id INT NOT NULL,
+        id SERIAL PRIMARY KEY,
+        player_id INTEGER NOT NULL,
+        pokemon_id INTEGER NOT NULL,
         pokemon_name VARCHAR(100) NOT NULL,
         pokemon_sprite VARCHAR(255),
-        level INT DEFAULT 5,
-        exp INT DEFAULT 0,
-        hp INT DEFAULT 50,
-        max_hp INT DEFAULT 50,
-        attack INT DEFAULT 10,
-        position INT NOT NULL,
+        level INTEGER DEFAULT 5,
+        exp INTEGER DEFAULT 0,
+        level_exp INTEGER DEFAULT 0,
+        hp INTEGER DEFAULT 50,
+        max_hp INTEGER DEFAULT 50,
+        attack INTEGER DEFAULT 10,
+        position INTEGER NOT NULL,
         caught_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
-        UNIQUE KEY unique_position (player_id, position)
+        UNIQUE (player_id, position)
       )
     `);
 
-		// 添加exp字段（如果表已存在但没有该字段）
-		try {
-			await connection.query(`
-        ALTER TABLE player_party 
-        ADD COLUMN exp INT DEFAULT 0 AFTER level
-      `);
-		} catch (err) {
-			// 字段已存在，忽略错误
-		}
-
-		// 添加level_exp字段（当前等级进度经验）
-		try {
-			await connection.query(`
-        ALTER TABLE player_party 
-        ADD COLUMN level_exp INT DEFAULT 0 AFTER exp
-      `);
-		} catch (err) {
-			// 字段已存在，忽略错误
-		}
-
 		// 玩家仓库表
-		await connection.query(`
+		await client.query(`
       CREATE TABLE IF NOT EXISTS player_storage (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        player_id INT NOT NULL,
-        pokemon_id INT NOT NULL,
+        id SERIAL PRIMARY KEY,
+        player_id INTEGER NOT NULL,
+        pokemon_id INTEGER NOT NULL,
         pokemon_name VARCHAR(100) NOT NULL,
         pokemon_sprite VARCHAR(255),
-        level INT DEFAULT 5,
-        hp INT DEFAULT 50,
-        max_hp INT DEFAULT 50,
-        attack INT DEFAULT 10,
+        level INTEGER DEFAULT 5,
+        hp INTEGER DEFAULT 50,
+        max_hp INTEGER DEFAULT 50,
+        attack INTEGER DEFAULT 10,
         caught_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
       )
     `);
 
 		// 玩家物品表
-		await connection.query(`
+		await client.query(`
       CREATE TABLE IF NOT EXISTS player_items (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        player_id INT NOT NULL,
-        pokeball_type_id INT NOT NULL,
-        quantity INT DEFAULT 0,
+        id SERIAL PRIMARY KEY,
+        player_id INTEGER NOT NULL,
+        pokeball_type_id INTEGER NOT NULL,
+        quantity INTEGER DEFAULT 0,
         FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
         FOREIGN KEY (pokeball_type_id) REFERENCES pokeball_types(id),
-        UNIQUE KEY unique_item (player_id, pokeball_type_id)
+        UNIQUE (player_id, pokeball_type_id)
       )
     `);
 
 		// 道馆表
-		await connection.query(`
+		await client.query(`
       CREATE TABLE IF NOT EXISTS gyms (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         leader_name VARCHAR(50) NOT NULL,
-        pokemon_id INT NOT NULL,
+        pokemon_id INTEGER NOT NULL,
         pokemon_name VARCHAR(100) NOT NULL,
         pokemon_sprite VARCHAR(255),
-        level INT DEFAULT 20,
-        hp INT DEFAULT 100,
-        max_hp INT DEFAULT 100,
-        attack INT DEFAULT 25,
-        reward_money INT DEFAULT 500,
+        level INTEGER DEFAULT 20,
+        hp INTEGER DEFAULT 100,
+        max_hp INTEGER DEFAULT 100,
+        attack INTEGER DEFAULT 25,
+        reward_money INTEGER DEFAULT 500,
         badge_name VARCHAR(50) NOT NULL,
         badge_image VARCHAR(255)
       )
@@ -199,7 +162,7 @@ export const initGameTables = async() => {
 
 		// 添加 max_hp 字段（如果表已存在但没有该字段）
 		try {
-			await connection.query(`
+			await client.query(`
         ALTER TABLE gyms 
         ADD COLUMN max_hp INT DEFAULT 100 AFTER hp
       `);
@@ -209,7 +172,7 @@ export const initGameTables = async() => {
 
 		// 添加 badge_image 字段（如果表已存在但没有该字段）
 		try {
-			await connection.query(`
+			await client.query(`
         ALTER TABLE gyms 
         ADD COLUMN badge_image VARCHAR(255) AFTER badge_name
       `);
@@ -217,91 +180,82 @@ export const initGameTables = async() => {
 			// 字段已存在，忽略错误
 		}
 
-		// 添加 reward_exp 字段（如果表已存在但没有该字段）
-		try {
-			await connection.query(`
-        ALTER TABLE gyms 
-        ADD COLUMN reward_exp INT DEFAULT 100 AFTER reward_money
-      `);
-		} catch (err) {
-			// 字段已存在，忽略错误
-		}
-
 		// 插入初始道馆数据
-		await connection.query(`
-      INSERT IGNORE INTO gyms (id, name, leader_name, pokemon_id, pokemon_name, pokemon_sprite, level, hp, max_hp, attack, reward_money, badge_name, badge_image) VALUES
+		await client.query(`
+      INSERT INTO gyms (id, name, leader_name, pokemon_id, pokemon_name, pokemon_sprite, level, hp, max_hp, attack, reward_money, badge_name, badge_image) VALUES
       (1, '岩石道馆', '小刚', 74, 'geodude', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/74.png', 15, 80, 80, 20, 500, '灰色徽章', 'https://raw.githubusercontent.com/BlueLanM/PokeLanM/main/images/Boulder_Badge.png'),
       (2, '水系道馆', '小霞', 120, 'staryu', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/120.png', 20, 100, 100, 25, 800, '蓝色徽章', 'https://raw.githubusercontent.com/BlueLanM/PokeLanM/main/images/Cascade_Badge.png'),
       (3, '电系道馆', '马志士', 25, 'pikachu', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png', 25, 120, 120, 30, 1000, '橙色徽章', 'https://raw.githubusercontent.com/BlueLanM/PokeLanM/main/images/Thunder_Badge.png')
+      ON CONFLICT (id) DO NOTHING
     `);
 
 		// 更新现有道馆数据的 max_hp（如果 max_hp 为空或0）
-		await connection.query(`
+		await client.query(`
       UPDATE gyms SET max_hp = hp WHERE max_hp IS NULL OR max_hp = 0
     `);
 
 		// 玩家徽章表
-		await connection.query(`
+		await client.query(`
       CREATE TABLE IF NOT EXISTS player_badges (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        player_id INT NOT NULL,
-        gym_id INT NOT NULL,
+        id SERIAL PRIMARY KEY,
+        player_id INTEGER NOT NULL,
+        gym_id INTEGER NOT NULL,
         earned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
         FOREIGN KEY (gym_id) REFERENCES gyms(id),
-        UNIQUE KEY unique_badge (player_id, gym_id)
+        UNIQUE (player_id, gym_id)
       )
     `);
 
 		// 玩家图鉴表 - 记录捕获过的宝可梦种类
-		await connection.query(`
+		await client.query(`
       CREATE TABLE IF NOT EXISTS player_pokedex (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        player_id INT NOT NULL,
-        pokemon_id INT NOT NULL,
+        id SERIAL PRIMARY KEY,
+        player_id INTEGER NOT NULL,
+        pokemon_id INTEGER NOT NULL,
         pokemon_name VARCHAR(100) NOT NULL,
         pokemon_name_en VARCHAR(100),
         pokemon_sprite VARCHAR(255),
         first_caught_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        total_caught INT DEFAULT 1,
+        total_caught INTEGER DEFAULT 1,
         FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
-        UNIQUE KEY unique_pokedex_entry (player_id, pokemon_id)
+        UNIQUE (player_id, pokemon_id)
       )
     `);
 
 		// 特殊徽章表 - 用于全图鉴等特殊成就
-		await connection.query(`
+		await client.query(`
       CREATE TABLE IF NOT EXISTS special_badges (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        player_id INT NOT NULL,
+        id SERIAL PRIMARY KEY,
+        player_id INTEGER NOT NULL,
         badge_type VARCHAR(50) NOT NULL,
         badge_name VARCHAR(100) NOT NULL,
         earned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
-        UNIQUE KEY unique_special_badge (player_id, badge_type)
+        UNIQUE (player_id, badge_type)
       )
     `);
 
 		// 地图表
-		await connection.query(`
+		await client.query(`
       CREATE TABLE IF NOT EXISTS maps (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         description TEXT,
-        min_level INT NOT NULL,
-        max_level INT NOT NULL,
+        min_level INTEGER NOT NULL,
+        max_level INTEGER NOT NULL,
         unlock_condition VARCHAR(255),
-        unlock_value INT DEFAULT 0,
+        unlock_value INTEGER DEFAULT 0,
         reward_multiplier DECIMAL(3,2) DEFAULT 1.00,
         background_image VARCHAR(255),
-        map_order INT NOT NULL,
+        map_order INTEGER NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
 		// 插入初始地图数据
-		await connection.query(`
-      INSERT IGNORE INTO maps (id, name, description, min_level, max_level, unlock_condition, unlock_value, reward_multiplier, background_image, map_order) VALUES
+		await client.query(`
+      INSERT INTO maps (id, name, description, min_level, max_level, unlock_condition, unlock_value, reward_multiplier, background_image, map_order) VALUES
       (1, '新手村', '适合刚开始冒险的训练师', 1, 10, 'none', 0, 1.00, '', 1),
       (2, '森林深处', '茂密的森林，栖息着更强的宝可梦', 10, 20, 'level', 10, 1.50, '', 2),
       (3, '山脉地带', '险峻的山脉，需要一定实力才能探索', 20, 30, 'level', 20, 2.00, '', 3),
@@ -312,41 +266,35 @@ export const initGameTables = async() => {
       (8, '黑暗洞窟', '深不见底的洞窟，危险重重', 70, 80, 'badges', 5, 4.50, '', 8),
       (9, '龙之谷', '传说中龙系宝可梦的栖息地', 80, 90, 'level', 80, 5.00, '', 9),
       (10, '冠军之路', '只有最强的训练师才能踏足的地方', 90, 100, 'badges', 8, 6.00, '', 10)
+      ON CONFLICT (id) DO NOTHING
     `);
 
 		// 玩家地图解锁表
-		await connection.query(`
+		await client.query(`
       CREATE TABLE IF NOT EXISTS player_map_unlocks (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        player_id INT NOT NULL,
-        map_id INT NOT NULL,
+        id SERIAL PRIMARY KEY,
+        player_id INTEGER NOT NULL,
+        map_id INTEGER NOT NULL,
         unlocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
         FOREIGN KEY (map_id) REFERENCES maps(id) ON DELETE CASCADE,
-        UNIQUE KEY unique_map_unlock (player_id, map_id)
+        UNIQUE (player_id, map_id)
       )
     `);
 
 		// 给所有现有玩家解锁第一个地图
-		await connection.query(`
-      INSERT IGNORE INTO player_map_unlocks (player_id, map_id)
+		await client.query(`
+      INSERT INTO player_map_unlocks (player_id, map_id)
       SELECT id, 1 FROM players
+      ON CONFLICT DO NOTHING
     `);
 
-		// 添加当前地图字段到玩家表
-		try {
-			await connection.query(`
-        ALTER TABLE players 
-        ADD COLUMN current_map_id INT DEFAULT 1
-      `);
-		} catch (err) {
-			// 字段已存在，忽略错误
-		}
+		console.log("✅ Game tables initialized successfully");
 	} catch (error) {
 		console.error("❌ Error initializing game tables:", error);
 		throw error;
 	} finally {
-		connection.release();
+		client.release();
 	}
 };
 
