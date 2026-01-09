@@ -481,12 +481,14 @@ export const addToParty = async(playerId, pokemon) => {
 
 	console.log("步骤2: 插入宝可梦到背包");
 	const position = 1; // 固定为1,因为只有一只参战精灵
-	const [result] = await pool.query(
+	const [rows, result] = await pool.query(
 		`INSERT INTO player_party (player_id, pokemon_id, pokemon_name, pokemon_sprite, level, hp, max_hp, attack, position)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		[playerId, pokemon.id, pokemon.name, pokemon.sprite, pokemon.level, pokemon.hp, pokemon.max_hp, pokemon.attack, position]
 	);
-	console.log("插入成功，insertId:", result.insertId);
+	// 兼容 MySQL 和 PostgreSQL
+	const insertId = result.insertId || rows[0]?.id || 1;
+	console.log("插入成功，insertId:", insertId, "result:", result);
 
 	console.log("步骤3: 更新玩家捕获数量");
 	await pool.query(
@@ -505,7 +507,7 @@ export const addToParty = async(playerId, pokemon) => {
 	}
 
 	console.log("========== addToParty 完成 ==========");
-	return result.insertId;
+	return insertId;
 };
 
 // 仓库相关操作
