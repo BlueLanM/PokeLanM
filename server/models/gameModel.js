@@ -463,50 +463,34 @@ export const getPlayerParty = async(playerId) => {
 };
 
 export const addToParty = async(playerId, pokemon) => {
-	console.log("========== addToParty 开始 ==========");
-	console.log("playerId:", playerId);
-	console.log("pokemon:", pokemon);
-
-	console.log("步骤1: 检查背包是否已有宝可梦");
 	const [existing] = await pool.query(
 		"SELECT COUNT(*) as count FROM player_party WHERE player_id = ?",
 		[playerId]
 	);
-	console.log("现有宝可梦数量:", existing[0].count);
 
 	if (existing[0].count >= 1) {
-		console.log("背包已满，返回null");
 		return null; // 背包已满(只能有1只主战精灵)
 	}
 
-	console.log("步骤2: 插入宝可梦到背包");
 	const position = 1; // 固定为1,因为只有一只参战精灵
 	const [rows, result] = await pool.query(
 		`INSERT INTO player_party (player_id, pokemon_id, pokemon_name, pokemon_sprite, level, hp, max_hp, attack, position)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		[playerId, pokemon.id, pokemon.name, pokemon.sprite, pokemon.level, pokemon.hp, pokemon.max_hp, pokemon.attack, position]
 	);
+
 	// 兼容 MySQL 和 PostgreSQL
 	const insertId = result.insertId || rows[0]?.id || 1;
-	console.log("插入成功，insertId:", insertId, "result:", result);
 
-	console.log("步骤3: 更新玩家捕获数量");
+	// 更新捕获精灵数量
 	await pool.query(
 		"UPDATE players SET pokemon_caught = pokemon_caught + 1 WHERE id = ?",
 		[playerId]
 	);
-	console.log("更新成功");
 
-	console.log("步骤4: 添加到图鉴");
-	try {
-		await addToPokedex(playerId, pokemon);
-		console.log("添加到图鉴成功");
-	} catch (pokedexError) {
-		console.error("添加到图鉴失败:", pokedexError);
-		throw pokedexError;
-	}
+	// 添加到图鉴
+	await addToPokedex(playerId, pokemon);
 
-	console.log("========== addToParty 完成 ==========");
 	return insertId;
 };
 
@@ -895,7 +879,6 @@ export const addToPokedex = async(playerId, pokemon) => {
 	try {
 		// 验证必填字段
 		if (!pokemon.id || !pokemon.name) {
-			console.error("pokemon数据不完整:", pokemon);
 			throw new Error("宝可梦数据缺少必填字段（id或name）");
 		}
 
@@ -918,22 +901,12 @@ export const addToPokedex = async(playerId, pokemon) => {
 			const pokemonNameEn = pokemon.name_en || pokemon.name || "Unknown";
 			const pokemonSprite = pokemon.sprite || "";
 
-			console.log("准备插入图鉴:", {
-				playerId,
-				pokemonId: pokemon.id,
-				pokemonName,
-				pokemonNameEn,
-				pokemonSprite
-			});
-
 			// 新发现，插入记录
 			await pool.query(
 				`INSERT INTO player_pokedex (player_id, pokemon_id, pokemon_name, pokemon_name_en, pokemon_sprite, total_caught)
 				 VALUES (?, ?, ?, ?, ?, 1)`,
 				[playerId, pokemon.id, pokemonName, pokemonNameEn, pokemonSprite]
 			);
-
-			console.log("图鉴插入成功");
 
 			// 检查是否完成全图鉴（可能失败，但不影响主流程）
 			try {
@@ -946,8 +919,6 @@ export const addToPokedex = async(playerId, pokemon) => {
 		}
 	} catch (error) {
 		console.error("添加到图鉴失败:", error);
-		console.error("pokemon数据:", pokemon);
-		// 重新抛出错误，让上层处理
 		throw new Error(`添加到图鉴失败: ${error.message}`);
 	}
 };
