@@ -463,31 +463,48 @@ export const getPlayerParty = async(playerId) => {
 };
 
 export const addToParty = async(playerId, pokemon) => {
+	console.log("========== addToParty 开始 ==========");
+	console.log("playerId:", playerId);
+	console.log("pokemon:", pokemon);
+
+	console.log("步骤1: 检查背包是否已有宝可梦");
 	const [existing] = await pool.query(
 		"SELECT COUNT(*) as count FROM player_party WHERE player_id = ?",
 		[playerId]
 	);
+	console.log("现有宝可梦数量:", existing[0].count);
 
 	if (existing[0].count >= 1) {
+		console.log("背包已满，返回null");
 		return null; // 背包已满(只能有1只主战精灵)
 	}
 
+	console.log("步骤2: 插入宝可梦到背包");
 	const position = 1; // 固定为1,因为只有一只参战精灵
 	const [result] = await pool.query(
 		`INSERT INTO player_party (player_id, pokemon_id, pokemon_name, pokemon_sprite, level, hp, max_hp, attack, position)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		[playerId, pokemon.id, pokemon.name, pokemon.sprite, pokemon.level, pokemon.hp, pokemon.max_hp, pokemon.attack, position]
 	);
+	console.log("插入成功，insertId:", result.insertId);
 
-	// 更新捕获精灵数量
+	console.log("步骤3: 更新玩家捕获数量");
 	await pool.query(
 		"UPDATE players SET pokemon_caught = pokemon_caught + 1 WHERE id = ?",
 		[playerId]
 	);
+	console.log("更新成功");
 
-	// 添加到图鉴
-	await addToPokedex(playerId, pokemon);
+	console.log("步骤4: 添加到图鉴");
+	try {
+		await addToPokedex(playerId, pokemon);
+		console.log("添加到图鉴成功");
+	} catch (pokedexError) {
+		console.error("添加到图鉴失败:", pokedexError);
+		throw pokedexError;
+	}
 
+	console.log("========== addToParty 完成 ==========");
 	return result.insertId;
 };
 
