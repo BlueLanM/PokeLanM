@@ -535,12 +535,26 @@ export const getPlayerItems = async(playerId) => {
 };
 
 export const updateItemQuantity = async(playerId, pokeballTypeId, quantity) => {
-	await pool.query(
-		`INSERT INTO player_items (player_id, pokeball_type_id, quantity)
-     VALUES (?, ?, ?)
-     ON DUPLICATE KEY UPDATE quantity = quantity + ?`,
-		[playerId, pokeballTypeId, quantity, quantity]
-	);
+	const DB_TYPE = process.env.DB_TYPE || "mysql";
+
+	if (DB_TYPE === "mysql") {
+		// MySQL: 使用 ON DUPLICATE KEY UPDATE
+		await pool.query(
+			`INSERT INTO player_items (player_id, pokeball_type_id, quantity)
+	     VALUES (?, ?, ?)
+	     ON DUPLICATE KEY UPDATE quantity = quantity + ?`,
+			[playerId, pokeballTypeId, quantity, quantity]
+		);
+	} else {
+		// PostgreSQL: 使用 ON CONFLICT ... DO UPDATE
+		await pool.query(
+			`INSERT INTO player_items (player_id, pokeball_type_id, quantity)
+	     VALUES (?, ?, ?)
+	     ON CONFLICT (player_id, pokeball_type_id) 
+	     DO UPDATE SET quantity = player_items.quantity + ?`,
+			[playerId, pokeballTypeId, quantity, quantity]
+		);
+	}
 };
 
 export const useItem = async(playerId, pokeballTypeId) => {
