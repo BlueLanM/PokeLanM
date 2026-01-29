@@ -528,7 +528,8 @@ export const getPlayerItems = async(playerId) => {
 		`SELECT pi.*, pt.name, pt.catch_rate, pt.price, pt.image
      FROM player_items pi
      JOIN pokeball_types pt ON pi.pokeball_type_id = pt.id
-     WHERE pi.player_id = ?`,
+     WHERE pi.player_id = ?
+     ORDER BY pt.id ASC`,
 		[playerId]
 	);
 	return rows;
